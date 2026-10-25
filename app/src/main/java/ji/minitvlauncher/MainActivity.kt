@@ -65,6 +65,21 @@ class MainActivity : ComponentActivity(), HomeActions {
     private var shownCustomStamp = 0L
     private lateinit var weatherSource: WeatherSource
     private var weather by mutableStateOf<Weather?>(null)
+    private var onVoiceText: ((String) -> Unit)? = null
+    private val speech = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.let { onVoiceText?.invoke(it) }
+        onVoiceText = null
+    }
+    private val speechIntent
+        get() = Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            .putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, getString(R.string.search_voice_prompt))
+
+    override val voiceSearch: ((onText: (String) -> Unit) -> Unit)? by lazy {
+        if (packageManager.resolveActivity(speechIntent, 0) == null) null
+        else { onText -> onVoiceText = onText; runCatching { speech.launch(speechIntent) } }
+    }
+
     private val locationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) refreshWeather()
     }

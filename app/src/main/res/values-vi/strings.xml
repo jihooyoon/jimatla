@@ -62,6 +62,17 @@
     <string name="weather_storm">Dông</string>
     <string name="weather_updated">Cập nhật %1$s</string>
 
+    <string name="search">Tìm kiếm</string>
+    <string name="search_hint">Tìm ứng dụng</string>
+    <string name="search_voice">Tìm bằng giọng nói</string>
+    <string name="search_all">Tất cả ứng dụng (%1$d)</string>
+    <plurals name="search_matches">
+        <item quantity="other">%d ứng dụng phù hợp</item>
+    </plurals>
+    <string name="search_none">Không tìm thấy ứng dụng nào cho “%1$s”</string>
+    <string name="search_voice_prompt">Nói tên ứng dụng</string>
+    <string name="close">Đóng</string>
+
     <string name="cat_video">Video và phim</string>
     <string name="cat_audio">Âm nhạc và âm thanh</string>
     <string name="cat_game">Trò chơi</string>

@@ -45,7 +45,8 @@ import ji.minitvlauncher.ui.theme.Palette
 import ji.minitvlauncher.ui.theme.px
 import ji.minitvlauncher.ui.theme.tx
 
-private object FullScreen : PopupPositionProvider {
+/** Covers the whole window; for full-screen popups (picker, search). */
+internal object FullScreen : PopupPositionProvider {
     override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize) = IntOffset.Zero
 }
 

@@ -26,6 +26,8 @@ import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.pressKey
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.github.takahirom.roborazzi.captureScreenRoboImage
@@ -106,6 +108,7 @@ class HomeScreenScreenshotTest {
         override fun clearNotifications() {}
         override fun selectWallpaper(choice: WallpaperChoice) { wallpaper = wallpaper.copy(choice = choice) }
         override fun pickWallpaperImage() { opened += "picker" }
+        override val voiceSearch: ((onText: (String) -> Unit) -> Unit)? = { onText -> onText("phim") }
         override suspend fun wallpaperThumbnail(choice: WallpaperChoice) =
             choice.asset?.let { a -> context.assets.open(a).use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = 4 }) }?.asImageBitmap() }
     }
@@ -230,10 +233,8 @@ class HomeScreenScreenshotTest {
     fun notificationPanelOpensAndForwardsClicks() {
         status = SystemStatus(notifications = sampleNotifications)
         show(apps.take(2))
-        press(listOf(Key.DirectionUp))
-        // Leftmost is Bluetooth (no inputs here); the bell is two to the right.
-        repeat(4) { press(listOf(Key.DirectionLeft)) }
-        press(listOf(Key.DirectionRight, Key.DirectionRight))
+        // Up reaches the search pill; Right enters the top bar at Bluetooth (no inputs here); the bell is two further.
+        press(listOf(Key.DirectionUp, Key.DirectionRight, Key.DirectionRight, Key.DirectionRight))
         compose.onNodeWithText("2 thông báo mới").assertExists()
         press(listOf(Key.DirectionCenter))
         captureScreenRoboImage("build/outputs/roborazzi/panel_notifications.png")
@@ -245,8 +246,7 @@ class HomeScreenScreenshotTest {
     fun inputPanel() {
         status = SystemStatus(inputs = listOf(TvInputItem("h1", "HDMI 1", true), TvInputItem("h2", "HDMI 2", true), TvInputItem("tv", "Ăng-ten", false)))
         show(apps.take(2))
-        press(listOf(Key.DirectionUp))
-        repeat(5) { press(listOf(Key.DirectionLeft)) }
+        press(listOf(Key.DirectionUp, Key.DirectionRight)) // Inputs is the first top-bar button
         press(listOf(Key.DirectionCenter))
         captureScreenRoboImage("build/outputs/roborazzi/panel_inputs.png")
         press(listOf(Key.DirectionDown, Key.DirectionCenter))
@@ -273,7 +273,7 @@ class HomeScreenScreenshotTest {
         wallpaper = dusk()
         show(apps.take(2))
         press(listOf(Key.DirectionUp))
-        repeat(6) { press(listOf(Key.DirectionRight)) }
+        repeat(7) { press(listOf(Key.DirectionRight)) }
         press(listOf(Key.DirectionLeft, Key.DirectionCenter)) // Wallpaper sits left of Settings
         captureScreenRoboImage("build/outputs/roborazzi/panel_wallpaper.png")
         press(listOf(Key.DirectionRight, Key.DirectionCenter))
@@ -290,4 +290,27 @@ class HomeScreenScreenshotTest {
         settle()
         shot("weather_stale")
     }
+
+    @Test
+    fun searchByTypingWithoutAccents() {
+        wallpaper = dusk()
+        show(apps)
+        press(listOf(Key.DirectionUp)) // the pill is above the first tile
+        press(listOf(Key.DirectionCenter))
+        captureScreenRoboImage("build/outputs/roborazzi/search_all.png")
+        compose.onNode(hasSetTextAction()).performTextInput("tro choi")
+        settle()
+        captureScreenRoboImage("build/outputs/roborazzi/search_typed.png")
+        compose.onNodeWithText("1 ứng dụng phù hợp").assertExists()
+    }
+
+    @Test
+    fun voiceResultFillsTheQuery() {
+        show(apps)
+        press(listOf(Key.DirectionUp, Key.DirectionCenter))
+        press(listOf(Key.DirectionLeft, Key.DirectionCenter)) // mic sits left of the field
+        compose.onNodeWithText("phim").assertExists()
+        captureScreenRoboImage("build/outputs/roborazzi/search_voice.png")
+    }
+
 }

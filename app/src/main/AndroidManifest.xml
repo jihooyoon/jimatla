@@ -26,6 +26,7 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
         <!-- System screens the top bar opens; checked before starting them. -->
+        <intent><action android:name="android.speech.action.RECOGNIZE_SPEECH" /></intent>
         <intent><action android:name="android.settings.SETTINGS" /></intent>
         <intent><action android:name="android.settings.BLUETOOTH_SETTINGS" /></intent>
         <intent><action android:name="android.settings.WIFI_SETTINGS" /></intent>

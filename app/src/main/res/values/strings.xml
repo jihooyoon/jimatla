@@ -68,6 +68,18 @@
     <string name="weather_storm">Thunderstorm</string>
     <string name="weather_updated">Updated %1$s</string>
 
+    <string name="search">Search</string>
+    <string name="search_hint">Search apps</string>
+    <string name="search_voice">Search by voice</string>
+    <string name="search_all">All apps (%1$d)</string>
+    <plurals name="search_matches">
+        <item quantity="one">%d matching app</item>
+        <item quantity="other">%d matching apps</item>
+    </plurals>
+    <string name="search_none">No apps match “%1$s”</string>
+    <string name="search_voice_prompt">Say an app name</string>
+    <string name="close">Close</string>
+
     <string name="cat_video">Video &amp; movies</string>
     <string name="cat_audio">Music &amp; audio</string>
     <string name="cat_game">Games</string>

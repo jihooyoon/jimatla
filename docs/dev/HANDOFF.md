@@ -27,7 +27,10 @@ Trước khi code: đọc kỹ `docs/dev/design/Main.dc.html` + 3 ghi chú trong
    - Cần thử trên TV: thời gian xử lý ảnh lần đầu, MediaStore có thấy ảnh trong USB không, chia sẻ từ X-plore, RAM sau khi có hình nền.
 5. ~~Thời tiết~~ — XONG 26/10 (đã commit, chưa thử trên TV): `weather/Weather.kt` (Open-Meteo, toạ độ làm tròn 0,1°, °F chỉ cho US…, mã WMO → 8 nhóm), `weather/WeatherSource.kt` (vị trí `getLastKnownLocation` network/passive/fused, tên nơi qua `Geocoder`, lưu kết quả cuối trong DataStore, tải lại tối đa 1 lần/giờ và CHỈ khi màn chính đang hiện). Xin quyền vị trí gần đúng đúng 1 lần (không hỏi lại); bị từ chối → ẩn dòng thời tiết. Dữ liệu cũ hơn 2 giờ → thêm "Cập nhật X trước". Icon thời tiết: CloudSun lấy từ thiết kế, còn lại tự vẽ cùng kiểu.
    - Cần thử trên TV: hộp thoại xin quyền vị trí, Geocoder trên TV này có trả tên "Hà Nội" không.
-6. Tìm kiếm app + nút giọng nói.
+6. ~~Tìm kiếm + giọng nói~~ — XONG 26/10 (đã commit, chưa thử trên TV): `ui/Search.kt`. Nút "Tìm kiếm" góc trên trái, trượt sang cạnh đồng hồ nhỏ khi cuộn; màn tìm kiếm toàn màn hình (Popup focusable): nút mic + ô nhập + nút đóng + lưới kết quả 5 cột; tìm không dấu (`searchKey` trong `HomeRows.kt`, đ→d). Phím mũi tên rời ô nhập khi con trỏ đã ở đầu/cuối. Mic = `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` (katniss), ẩn nếu TV không có. Gõ xong bấm "Tìm" trên bàn phím mà chỉ còn 1 kết quả → mở luôn.
+   - Cần thử trên TV: bàn phím ảo có hiện khi ô nhập được focus không (ô nhập nằm trong Popup), giọng nói tiếng Việt qua katniss.
+   - Chưa làm (thiết kế ghi ưu tiên THẤP): tự đóng màn Tìm kiếm khi người dùng bấm nút giọng nói trên remote mở Assistant.
+   - Bài học: trong Popup phải lấy `LocalFocusManager` BÊN TRONG nội dung Popup, lấy bên ngoài là focus manager của cửa sổ chính.
 7. Ngôn ngữ: theo ngôn ngữ hệ thống, chưa có bản dịch → tiếng Anh. Đây chính là cơ chế tài nguyên mặc định của Android (`values/` = tiếng Anh, `values-vi/` = tiếng Việt) → không cần chọn ngôn ngữ trong app, không cần AppCompat. Việc còn lại: mọi chữ hiển thị đều lấy từ `strings.xml`, bản tiếng Anh luôn đầy đủ.
 
 ### Thao tác riêng trên TV (không thuộc kế hoạch code)

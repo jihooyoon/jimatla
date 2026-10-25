@@ -3,6 +3,8 @@ package ji.minitvlauncher
 import android.content.ComponentName
 import android.content.pm.ApplicationInfo
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -53,5 +55,15 @@ class HomeRowsTest {
         assertEquals(favs, favs.moved(tv.component, -1))
         assertEquals(favs, favs.moved(music.component, 1))
         assertEquals(favs, favs.moved(movies.component, 1))
+    }
+
+    @Test
+    fun `search ignores case and Vietnamese accents`() {
+        assertEquals("dau tieng viet", searchKey("  Đầu Tiếng Việt "))
+        val phim = app("Phim truyện")
+        assertTrue(phim.matchesQuery("phim"))
+        assertTrue(phim.matchesQuery("TRUYEN"))
+        assertTrue(phim.matchesQuery(""))
+        assertFalse(phim.matchesQuery("nhạc"))
     }
 }

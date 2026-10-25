@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.pm.ApplicationInfo
 import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.Color
+import java.text.Normalizer
 
 /** A category row on the home screen; also gives tiles without a banner their color. */
 enum class AppCategory(val code: Int, @StringRes val title: Int, val fill: Color) {
@@ -52,3 +53,14 @@ fun List<ComponentName>.moved(item: ComponentName, delta: Int): List<ComponentNa
     if (from < 0 || to !in indices) return this
     return toMutableList().apply { add(to, removeAt(from)) }
 }
+
+/** Lowercase, accents stripped and đ → d, so "phim" finds "Phim" and "dau" finds "Đầu". */
+fun searchKey(text: String): String =
+    Normalizer.normalize(text, Normalizer.Form.NFD)
+        .replace(Regex("\\p{Mn}+"), "")
+        .replace('đ', 'd').replace('Đ', 'D')
+        .lowercase()
+        .trim()
+
+/** Every app matches an empty query; otherwise the name must contain it, accents ignored. */
+fun AppEntry.matchesQuery(query: String): Boolean = searchKey(label).contains(searchKey(query))

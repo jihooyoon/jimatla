@@ -138,6 +138,8 @@ interface HomeActions {
     /** The system picker where there is one, else the launcher's own. */
     fun pickWallpaperImage()
     suspend fun wallpaperThumbnail(choice: WallpaperChoice): ImageBitmap?
+    /** Null when the TV has no speech recognizer. */
+    val voiceSearch: ((onText: (String) -> Unit) -> Unit)?
 }
 
 /** The chosen wallpaper and what to paint for it. */
@@ -171,12 +173,16 @@ internal const val SIDE = 120
 private const val TILE_W = 320
 private const val TILE_H = 180
 internal const val FOCUSED_SCALE = 352f / TILE_W
+// "20:45" at 44 px semibold is about 2.7 em; the search pill sits 32 px past it once collapsed.
+private const val CLOCK_SMALL_WIDTH = 119
 
 /** Transient home-screen state: which tile has its menu open, is being moved, or should take focus. */
 @Stable
 private class HomeUi {
     var menuFor by mutableStateOf<ComponentName?>(null)
     var panel by mutableStateOf<Panel?>(null)
+    var searching by mutableStateOf(false)
+    var voiceQuery by mutableStateOf<String?>(null)
     var arranging by mutableStateOf<ComponentName?>(null)
     var pendingFocus by mutableStateOf<ComponentName?>(null)
     var toast by mutableStateOf<Int?>(null)
@@ -241,10 +247,29 @@ fun HomeScreen(
         RowsViewport(rows, images, actions, ui, onMenuAction, onMove, scroll, firstTile, firstRowWithApps)
         ViewportEdges(collapse)
         Clock(collapse, now, weather)
+        val pillShift = with(density) { (CLOCK_SMALL_WIDTH + 32).px.toPx() }
+        SearchPill(
+            onClick = { ui.voiceQuery = null; ui.searching = true },
+            modifier = Modifier
+                .padding(start = SIDE.px, top = 64.px)
+                .graphicsLayer { translationX = pillShift * collapse() },
+        )
         TopBar(topButtons(status, actions, ui))
         if (ui.menuFor != null) Box(Modifier.fillMaxSize().background(Color(0x59050608)))
         if (ui.panel != null) Box(Modifier.fillMaxSize().background(ScrimColor))
         BottomPill(ui, rows)
+    }
+
+    if (ui.searching) {
+        val voice = actions.voiceSearch
+        SearchScreen(
+            apps = remember(rows) { rows.flatMap { it.apps }.sortedWith(compareBy(java.text.Collator.getInstance()) { it.label }) },
+            images = images,
+            voiceQuery = ui.voiceQuery,
+            onVoice = voice?.let { start -> { start { text -> ui.voiceQuery = text } } },
+            onLaunch = { ui.searching = false; actions.launch(it) },
+            onDismiss = { ui.searching = false },
+        )
     }
 
     when (ui.panel) {
@@ -277,6 +302,7 @@ fun HomeScreen(
         if (homePresses > 0) {
             ui.menuFor = null
             ui.panel = null
+            ui.searching = false
             ui.arranging = null
             scroll.animateScrollTo(0)
         }
@@ -624,7 +650,7 @@ private fun MoveArrow(icon: ImageVector, direction: Int, modifier: Modifier) {
 }
 
 @Composable
-private fun TileImage(app: AppEntry, images: AppImageSource) {
+internal fun TileImage(app: AppEntry, images: AppImageSource) {
     val density = LocalDensity.current
     val image by produceState(images.cachedImage(app), app) {
         if (value != null) return@produceState
