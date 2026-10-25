@@ -44,3 +44,11 @@ fun buildRows(apps: List<AppEntry>, favorites: List<ComponentName>): List<HomeRo
     return listOf(HomeRow(RowKey.Favorites, favoriteApps)) +
         AppCategory.entries.mapNotNull { cat -> rest[cat]?.let { HomeRow(RowKey.Category(cat), it) } }
 }
+
+/** [item] swapped with its neighbor [delta] places away; unchanged at either end. */
+fun List<ComponentName>.moved(item: ComponentName, delta: Int): List<ComponentName> {
+    val from = indexOf(item)
+    val to = from + delta
+    if (from < 0 || to !in indices) return this
+    return toMutableList().apply { add(to, removeAt(from)) }
+}

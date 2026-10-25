@@ -11,6 +11,17 @@
     </plurals>
     <string name="row_position">%1$d / %2$d</string>
 
+    <string name="menu_open">Open</string>
+    <string name="menu_add_favorite">Add to favorites</string>
+    <string name="menu_remove_favorite">Remove from favorites</string>
+    <string name="menu_arrange">Move</string>
+    <string name="menu_app_info">App info</string>
+    <string name="toast_added_favorite">Added to favorites</string>
+    <string name="toast_removed_favorite">Removed from favorites</string>
+    <string name="arranging">Moving “%1$s”</string>
+    <string name="arranging_move">◀ ▶  Move</string>
+    <string name="arranging_done">OK / Back  Done</string>
+
     <string name="cat_video">Video &amp; movies</string>
     <string name="cat_audio">Music &amp; audio</string>
     <string name="cat_game">Games</string>

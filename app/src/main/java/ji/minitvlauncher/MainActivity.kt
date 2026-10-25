@@ -2,10 +2,13 @@ package ji.minitvlauncher
 
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings as SystemSettings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -17,11 +20,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import ji.minitvlauncher.data.Settings
+import ji.minitvlauncher.ui.HomeActions
 import ji.minitvlauncher.ui.HomeScreen
 import ji.minitvlauncher.ui.theme.LauncherTheme
+import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), HomeActions {
     private lateinit var repository: AppRepository
     private lateinit var settings: Settings
     private var apps by mutableStateOf<List<AppEntry>?>(null)
@@ -50,7 +56,7 @@ class MainActivity : ComponentActivity() {
                 val favorites by settings.favorites.collectAsStateWithLifecycle(emptyList())
                 val loaded = apps ?: return@LauncherTheme
                 val rows = remember(loaded, favorites) { buildRows(loaded, favorites) }
-                HomeScreen(rows, repository, ::launch, homePresses)
+                HomeScreen(rows, repository, this@MainActivity, homePresses)
             }
         }
     }
@@ -70,14 +76,27 @@ class MainActivity : ComponentActivity() {
         Thread { repository.loadApps().also { runOnUiThread { apps = it } } }.start()
     }
 
-    private fun launch(entry: AppEntry) {
+    override fun setFavorites(favorites: List<ComponentName>) {
+        lifecycleScope.launch { settings.setFavorites(favorites) }
+    }
+
+    override fun showAppInfo(app: AppEntry) {
+        val intent = Intent(SystemSettings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", app.component.packageName, null))
         try {
-            startActivity(repository.launchIntent(entry))
+            startActivity(intent)
         } catch (_: ActivityNotFoundException) {
-            Toast.makeText(this, getString(R.string.launch_failed, entry.label), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.launch_failed, getString(R.string.menu_app_info)), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun launch(app: AppEntry) {
+        try {
+            startActivity(repository.launchIntent(app))
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(this, getString(R.string.launch_failed, app.label), Toast.LENGTH_SHORT).show()
             reload()
         } catch (_: SecurityException) {
-            Toast.makeText(this, getString(R.string.launch_failed, entry.label), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.launch_failed, app.label), Toast.LENGTH_SHORT).show()
         }
     }
 }

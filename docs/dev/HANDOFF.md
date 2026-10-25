@@ -17,7 +17,9 @@ Trước khi code: đọc kỹ `docs/dev/design/Main.dc.html` + 3 ghi chú trong
    - Test: `./gradlew :app:testDebugUnitTest -Proborazzi.test.record=true` → ảnh 1920×1080 ở `app/build/outputs/roborazzi/` (Robolectric SDK 35, xem `app/src/test/resources/robolectric.properties`).
    - Cần xem trên TV: độ mượt khi cuộn/chạy chữ, font biến thể trên Android 9, app thật phần lớn không khai báo `appCategory` → dồn vào "Khác".
    - Đã thử và bỏ: khi Ưa thích rỗng giữ cuộn ở đầu → ô đang chọn bị đẩy xuống sát đáy, tệ hơn.
-3. Menu nhấn giữ OK: Mở / Thêm-Xóa ưa thích / Sắp xếp / Thông tin ứng dụng.
+3. ~~Menu nhấn giữ OK~~ — XONG 26/10 (đã commit, chưa thử trên TV): `ui/AppMenu.kt` (Popup focusable neo vào ô, dưới ô hoặc lên trên nếu hết chỗ; Back đóng), `ui/Icons.kt` (icon nét lấy từ SVG thiết kế). Mở bằng nhấn giữ OK (`Card.onLongClick` của tv-material) hoặc phím Menu. Thêm/Xóa ưa thích → focus theo app sang hàng mới + thông báo nhỏ 1,8 s; Sắp xếp → ◀ ▶ đổi chỗ, OK/Back xong, ô khác mờ 40 %; Thông tin ứng dụng → `ACTION_APPLICATION_DETAILS_SETTINGS`.
+   - Cần xem trên TV: nhấn giữ OK có mở menu không (test chỉ thử được phím Menu), màn thông tin ứng dụng có mở được trên TV này không.
+   - Test Robolectric: popup gắn cửa sổ qua main looper → `settle()` trong test phải `shadowOf(mainLooper).idle()`.
 4. Hàng nút trên: Bluetooth, Mạng, Cài đặt (mở màn hệ thống); Nguồn vào (thử thực tế); Thông báo (cấp quyền qua adb); Hình nền (tự viết trình chọn ảnh — nặng nhất).
 5. Thời tiết: vị trí hệ thống + Open-Meteo.
 6. Tìm kiếm app + nút giọng nói.

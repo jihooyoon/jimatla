@@ -8,6 +8,17 @@
         <item quantity="other">%d ứng dụng</item>
     </plurals>
 
+    <string name="menu_open">Mở</string>
+    <string name="menu_add_favorite">Thêm vào ưa thích</string>
+    <string name="menu_remove_favorite">Xóa ưa thích</string>
+    <string name="menu_arrange">Sắp xếp</string>
+    <string name="menu_app_info">Thông tin ứng dụng</string>
+    <string name="toast_added_favorite">Đã thêm vào Ưa thích</string>
+    <string name="toast_removed_favorite">Đã xóa khỏi Ưa thích</string>
+    <string name="arranging">Đang sắp xếp “%1$s”</string>
+    <string name="arranging_move">◀ ▶  Đổi vị trí</string>
+    <string name="arranging_done">OK / Back  Xong</string>
+
     <string name="cat_video">Video và phim</string>
     <string name="cat_audio">Âm nhạc và âm thanh</string>
     <string name="cat_game">Trò chơi</string>

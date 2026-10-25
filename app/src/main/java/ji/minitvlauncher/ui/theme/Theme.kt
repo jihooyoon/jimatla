@@ -55,6 +55,8 @@ object Type {
     val TileLabel = TextStyle(fontFamily = Manrope, fontSize = 24.tx, lineHeight = 32.tx, fontWeight = FontWeight.Medium)
     val Date = TextStyle(fontFamily = Manrope, fontSize = 28.tx, lineHeight = 36.tx)
     val Hint = TextStyle(fontFamily = Manrope, fontSize = 24.tx)
+    val MenuItem = TextStyle(fontFamily = Manrope, fontSize = 24.tx, fontWeight = FontWeight.Medium)
+    val Pill = TextStyle(fontFamily = Manrope, fontSize = 22.tx)
 }
 
 @Composable

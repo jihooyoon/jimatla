@@ -1,14 +1,20 @@
 package ji.minitvlauncher.ui
 
-import android.text.format.DateFormat
+import android.content.ComponentName
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.BringIntoViewSpec
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,17 +27,23 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -53,27 +65,29 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInParent
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.lerp
+import androidx.compose.ui.zIndex
 import androidx.tv.material3.Border
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
@@ -84,14 +98,12 @@ import ji.minitvlauncher.HomeRow
 import ji.minitvlauncher.R
 import ji.minitvlauncher.RowKey
 import ji.minitvlauncher.appCategory
-import ji.minitvlauncher.ui.theme.Manrope
+import ji.minitvlauncher.moved
 import ji.minitvlauncher.ui.theme.Palette
 import ji.minitvlauncher.ui.theme.Type
 import ji.minitvlauncher.ui.theme.px
-import ji.minitvlauncher.ui.theme.tx
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.util.Date
 
 /** Where the home screen gets card images; the app's repository on device, fakes in tests. */
@@ -100,24 +112,47 @@ interface AppImageSource {
     suspend fun loadImage(entry: AppEntry, widthPx: Int, heightPx: Int): AppImage?
 }
 
+/** What the home screen asks of the system; the activity on device, fakes in tests. */
+interface HomeActions {
+    fun launch(app: AppEntry)
+    fun setFavorites(favorites: List<ComponentName>)
+    fun showAppInfo(app: AppEntry)
+}
+
 // Layout from the design, in 1920×1080 design pixels.
 private const val VIEWPORT_TOP = 160
 private const val FIRST_ROW_TOP = 370 // inside the viewport; the focused row is scrolled here
 private const val COLLAPSE_DISTANCE = 220 // scroll over which the clock shrinks
-private const val SIDE = 120
+internal const val SIDE = 120
 private const val TILE_W = 320
 private const val TILE_H = 180
-private const val FOCUSED_SCALE = 352f / TILE_W
+internal const val FOCUSED_SCALE = 352f / TILE_W
 
-/** Bumped by the activity when Home is pressed while already home. */
+/** Transient home-screen state: which tile has its menu open, is being moved, or should take focus. */
+@Stable
+private class HomeUi {
+    var menuFor by mutableStateOf<ComponentName?>(null)
+    var arranging by mutableStateOf<ComponentName?>(null)
+    var pendingFocus by mutableStateOf<ComponentName?>(null)
+    var toast by mutableStateOf<Int?>(null)
+    var toastSerial by mutableIntStateOf(0)
+
+    fun showToast(@StringRes text: Int) {
+        toast = text
+        toastSerial++
+    }
+}
+
+/** [homePresses] is bumped by the activity when Home is pressed while already home. */
 @Composable
 fun HomeScreen(
     rows: List<HomeRow>,
     images: AppImageSource,
-    onLaunch: (AppEntry) -> Unit,
+    actions: HomeActions,
     homePresses: Int = 0,
     now: () -> Date = ::Date,
 ) {
+    val ui = remember { HomeUi() }
     val scroll = rememberScrollState()
     val density = LocalDensity.current
     val collapseDistancePx = with(density) { COLLAPSE_DISTANCE.px.toPx() }
@@ -128,17 +163,49 @@ fun HomeScreen(
     }
     val firstTile = remember { FocusRequester() }
     val firstRowWithApps = rows.indexOfFirst { it.apps.isNotEmpty() }
+    val favorites = rows.first { it.key == RowKey.Favorites }.apps.map { it.component }
+
+    val onMenuAction: (AppEntry, MenuAction) -> Unit = { app, action ->
+        val c = app.component
+        ui.menuFor = null
+        when (action) {
+            MenuAction.Open -> actions.launch(app)
+            MenuAction.AddFavorite -> {
+                actions.setFavorites(favorites + c)
+                ui.pendingFocus = c
+                ui.showToast(R.string.toast_added_favorite)
+            }
+            MenuAction.RemoveFavorite -> {
+                actions.setFavorites(favorites - c)
+                ui.pendingFocus = c
+                ui.showToast(R.string.toast_removed_favorite)
+            }
+            MenuAction.Arrange -> ui.arranging = c
+            MenuAction.AppInfo -> actions.showAppInfo(app)
+        }
+    }
+    val onMove: (AppEntry, Int) -> Unit = { app, delta -> actions.setFavorites(favorites.moved(app.component, delta)) }
 
     Box(Modifier.fillMaxSize().background(Palette.Background)) {
-        RowsViewport(rows, images, onLaunch, scroll, firstTile, firstRowWithApps)
+        RowsViewport(rows, images, actions, ui, onMenuAction, onMove, scroll, firstTile, firstRowWithApps)
         ViewportEdges(collapse)
         Clock(collapse, now)
+        if (ui.menuFor != null) Box(Modifier.fillMaxSize().background(Color(0x59050608)))
+        BottomPill(ui, rows)
     }
 
     LaunchedEffect(firstRowWithApps >= 0, homePresses) {
         if (firstRowWithApps < 0) return@LaunchedEffect
-        if (homePresses > 0) scroll.animateScrollTo(0)
+        if (homePresses > 0) {
+            ui.menuFor = null
+            ui.arranging = null
+            scroll.animateScrollTo(0)
+        }
         runCatching { firstTile.requestFocus() }
+    }
+    LaunchedEffect(ui.toastSerial) {
+        delay(1800)
+        ui.toast = null
     }
 }
 
@@ -166,7 +233,10 @@ private class EdgePaddingSpec(private val padPx: Float) : BringIntoViewSpec {
 private fun RowsViewport(
     rows: List<HomeRow>,
     images: AppImageSource,
-    onLaunch: (AppEntry) -> Unit,
+    actions: HomeActions,
+    ui: HomeUi,
+    onMenuAction: (AppEntry, MenuAction) -> Unit,
+    onMove: (AppEntry, Int) -> Unit,
     scroll: ScrollState,
     firstTile: FocusRequester,
     firstRowWithApps: Int,
@@ -191,7 +261,10 @@ private fun RowsViewport(
                     AppRow(
                         row = row,
                         images = images,
-                        onLaunch = onLaunch,
+                        actions = actions,
+                        ui = ui,
+                        onMenuAction = onMenuAction,
+                        onMove = onMove,
                         rowSpec = rowSpec,
                         firstTile = if (index == firstRowWithApps) firstTile else null,
                         onFocused = {
@@ -212,15 +285,28 @@ private fun RowsViewport(
 private fun AppRow(
     row: HomeRow,
     images: AppImageSource,
-    onLaunch: (AppEntry) -> Unit,
+    actions: HomeActions,
+    ui: HomeUi,
+    onMenuAction: (AppEntry, MenuAction) -> Unit,
+    onMove: (AppEntry, Int) -> Unit,
     rowSpec: BringIntoViewSpec,
     firstTile: FocusRequester?,
     onFocused: () -> Unit,
     modifier: Modifier,
 ) {
-    var focusedIndex by remember { mutableIntStateOf(-1) }
+    // Tracked by app rather than position, so the count stays right while a favorite is moved.
+    var focusedApp by remember { mutableStateOf<ComponentName?>(null) }
+    val focusedIndex = row.apps.indexOfFirst { it.component == focusedApp }
     val active = focusedIndex >= 0
     val count = row.apps.size
+    val isFavorites = row.key == RowKey.Favorites
+    val listState = rememberLazyListState()
+
+    // A tile that should take focus must be composed first: scroll the row to it.
+    LaunchedEffect(ui.pendingFocus, row.apps) {
+        val index = row.apps.indexOfFirst { it.component == ui.pendingFocus }
+        if (index >= 0 && listState.layoutInfo.visibleItemsInfo.none { it.index == index }) listState.scrollToItem(index)
+    }
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.px)) {
         Row(Modifier.padding(horizontal = SIDE.px), horizontalArrangement = Arrangement.spacedBy(20.px)) {
@@ -249,22 +335,32 @@ private fun AppRow(
 
         CompositionLocalProvider(LocalBringIntoViewSpec provides rowSpec) {
             LazyRow(
+                state = listState,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .onFocusChanged { if (!it.hasFocus) focusedIndex = -1 },
+                    .onFocusChanged { if (!it.hasFocus) focusedApp = null },
                 contentPadding = PaddingValues(start = SIDE.px, end = (SIDE + 88).px, top = 24.px, bottom = 18.px),
                 horizontalArrangement = Arrangement.spacedBy(32.px),
             ) {
                 itemsIndexed(row.apps, key = { _, app -> app.component.flattenToString() }) { index, app ->
+                    val arranging = ui.arranging == app.component
                     AppTile(
                         app = app,
+                        index = index,
                         images = images,
-                        onClick = { onLaunch(app) },
+                        ui = ui,
+                        isFavorite = isFavorites,
+                        canMoveLeft = arranging && index > 0,
+                        canMoveRight = arranging && index < count - 1,
+                        onClick = { actions.launch(app) },
+                        onMenuAction = { onMenuAction(app, it) },
+                        onMove = { onMove(app, it) },
                         onFocused = {
-                            focusedIndex = index
+                            focusedApp = app.component
                             onFocused()
                         },
-                        modifier = if (index == 0 && firstTile != null) Modifier.focusRequester(firstTile) else Modifier,
+                        extraFocus = if (index == 0) firstTile else null,
+                        modifier = if (arranging) Modifier.zIndex(1f) else Modifier,
                     )
                 }
             }
@@ -301,36 +397,118 @@ private fun EmptyFavorites() {
     }
 }
 
+private val ConfirmKeys = setOf(Key.DirectionCenter, Key.Enter, Key.NumPadEnter, Key.Back, Key.Escape)
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AppTile(
     app: AppEntry,
+    index: Int,
     images: AppImageSource,
+    ui: HomeUi,
+    isFavorite: Boolean,
+    canMoveLeft: Boolean,
+    canMoveRight: Boolean,
     onClick: () -> Unit,
+    onMenuAction: (MenuAction) -> Unit,
+    onMove: (Int) -> Unit,
     onFocused: () -> Unit,
+    extraFocus: FocusRequester?,
     modifier: Modifier,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
+    val focus = remember { FocusRequester() }
+    val bringIntoView = remember { BringIntoViewRequester() }
     val shape = RoundedCornerShape(12.px)
     val fill = app.appCategory.fill
+    val arranging = ui.arranging == app.component
+    val dimmed = ui.arranging != null && !arranging
 
-    Column(Modifier.width(TILE_W.px), verticalArrangement = Arrangement.spacedBy(18.px)) {
-        Card(
-            onClick = onClick,
-            modifier = modifier
-                .size(TILE_W.px, TILE_H.px)
-                .onFocusChanged { if (it.isFocused) onFocused() },
-            interactionSource = interaction,
-            shape = CardDefaults.shape(shape),
-            colors = CardDefaults.colors(containerColor = fill, focusedContainerColor = fill),
-            scale = CardDefaults.scale(focusedScale = FOCUSED_SCALE),
-            border = CardDefaults.border(
-                focusedBorder = Border(BorderStroke(4.px, Palette.TextBright), inset = (-4).px, shape = shape),
-            ),
-        ) {
-            TileImage(app, images)
+    LaunchedEffect(ui.pendingFocus) {
+        if (ui.pendingFocus == app.component) {
+            ui.pendingFocus = null
+            runCatching { focus.requestFocus() }
         }
-        TileLabel(app.label, focused)
+    }
+    // Moving a favorite reorders the row; keep the moved tile on screen.
+    LaunchedEffect(index, arranging) { if (arranging) bringIntoView.bringIntoView() }
+
+    Box(modifier) {
+        Column(
+            Modifier
+                .width(TILE_W.px)
+                .graphicsLayer { alpha = if (dimmed) 0.4f else 1f },
+            verticalArrangement = Arrangement.spacedBy(18.px),
+        ) {
+            Card(
+                onClick = onClick,
+                onLongClick = { if (ui.arranging == null) ui.menuFor = app.component },
+                modifier = Modifier
+                    .size(TILE_W.px, TILE_H.px)
+                    .focusRequester(focus)
+                    .then(if (extraFocus != null) Modifier.focusRequester(extraFocus) else Modifier)
+                    .bringIntoViewRequester(bringIntoView)
+                    .onFocusChanged { if (it.isFocused) onFocused() }
+                    .onPreviewKeyEvent { event ->
+                        val down = event.type == KeyEventType.KeyDown
+                        when {
+                            arranging -> {
+                                when (event.key) {
+                                    Key.DirectionLeft -> if (down) onMove(-1)
+                                    Key.DirectionRight -> if (down) onMove(1)
+                                    in ConfirmKeys -> if (!down) ui.arranging = null
+                                }
+                                true // nothing else happens while moving a tile
+                            }
+                            event.key == Key.Menu && down && ui.arranging == null -> {
+                                ui.menuFor = app.component
+                                true
+                            }
+                            else -> false
+                        }
+                    },
+                interactionSource = interaction,
+                shape = CardDefaults.shape(shape),
+                colors = CardDefaults.colors(containerColor = fill, focusedContainerColor = fill),
+                scale = CardDefaults.scale(focusedScale = FOCUSED_SCALE),
+                border = CardDefaults.border(
+                    focusedBorder = Border(BorderStroke(4.px, Palette.TextBright), inset = (-4).px, shape = shape),
+                ),
+            ) {
+                TileImage(app, images)
+                if (ui.menuFor == app.component) {
+                    AppMenu(app.label, isFavorite, onMenuAction, onDismiss = { ui.menuFor = null })
+                }
+            }
+            TileLabel(app.label, focused)
+        }
+        // Beside the scaled-up tile (it spans -16..336), overlapping it by 12 like the design.
+        if (arranging) {
+            if (canMoveLeft) MoveArrow(Icons.ChevronLeft, -1, Modifier.offset(x = (-60).px, y = 62.px))
+            if (canMoveRight) MoveArrow(Icons.ChevronRight, 1, Modifier.offset(x = 324.px, y = 62.px))
+        }
+    }
+}
+
+/** Round hint beside a tile being arranged, nudging in its direction. */
+@Composable
+private fun MoveArrow(icon: ImageVector, direction: Int, modifier: Modifier) {
+    val nudge by rememberInfiniteTransition(label = "nudge").animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
+        label = "nudge",
+    )
+    val shift = with(LocalDensity.current) { 5.px.toPx() }
+    Box(
+        modifier
+            .graphicsLayer { translationX = direction * shift * nudge }
+            .size(56.px)
+            .background(Palette.TextBright, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(rememberVectorPainter(icon), null, Modifier.size(28.px), colorFilter = ColorFilter.tint(Palette.Background))
     }
 }
 
@@ -397,6 +575,31 @@ private fun Modifier.fadeEdges(start: Dp, end: Dp) = this
         )
     }
 
+/** Toasts, and the key hints while a favorite is being arranged. */
+@Composable
+private fun BottomPill(ui: HomeUi, rows: List<HomeRow>) {
+    val arranging = ui.arranging?.let { c -> rows.firstNotNullOfOrNull { r -> r.apps.firstOrNull { it.component == c } } }
+    val toast = ui.toast
+    if (arranging == null && toast == null) return
+    Box(Modifier.fillMaxSize().padding(bottom = 56.px), contentAlignment = Alignment.BottomCenter) {
+        Row(
+            Modifier
+                .background(Palette.Surface, RoundedCornerShape(40.px))
+                .border(BorderStroke(1.px, Palette.Border), RoundedCornerShape(40.px))
+                .padding(horizontal = 32.px, vertical = 16.px),
+            horizontalArrangement = Arrangement.spacedBy(32.px),
+        ) {
+            if (arranging != null) {
+                Text(stringResource(R.string.arranging, arranging.label), style = Type.Pill, color = Palette.TextBright)
+                Text(stringResource(R.string.arranging_move), style = Type.Pill, color = Palette.TextMuted)
+                Text(stringResource(R.string.arranging_done), style = Type.Pill, color = Palette.TextMuted)
+            } else if (toast != null) {
+                Text(stringResource(toast), style = Type.Pill, color = Palette.TextBright)
+            }
+        }
+    }
+}
+
 /**
  * Rows fade in under the clock and out at the bottom. Painted in the background color rather than
  * masked, so no offscreen layer is needed while scrolling; the top one only shows once scrolled,
@@ -421,74 +624,4 @@ private fun ViewportEdges(collapse: () -> Float) {
                 .background(Brush.verticalGradient(listOf(Palette.Background.copy(alpha = 0f), Palette.Background))),
         )
     }
-}
-
-private val ClockLarge = TextStyle(
-    fontFamily = Manrope,
-    fontSize = 128.tx,
-    lineHeight = 128.tx,
-    fontWeight = FontWeight(300),
-    letterSpacing = (-4).tx,
-    fontFeatureSettings = "tnum",
-    lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
-)
-private val ClockSmall = ClockLarge.copy(fontSize = 44.tx, lineHeight = 44.tx, fontWeight = FontWeight(600), letterSpacing = (-0.5).tx)
-
-/**
- * Big clock that shrinks into the top-left corner as rows scroll up. Instead of re-laying out text at
- * every size and weight, a light large rendering and a bold small one are scaled and cross-faded.
- */
-@Composable
-private fun Clock(collapse: () -> Float, now: () -> Date) {
-    val context = LocalContext.current
-    val locale = LocalConfiguration.current.locales[0]
-    val timeFormat = remember(locale) { SimpleDateFormat(if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm", locale) }
-    val dateFormat = remember(locale) { SimpleDateFormat(DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM"), locale) }
-
-    val date by produceState(now()) {
-        while (true) {
-            value = now()
-            delay(60_000 - value.time % 60_000)
-        }
-    }
-    val time = timeFormat.format(date)
-
-    fun size(e: Float) = lerp(128f, 44f, e)
-    fun top(e: Float) = lerp(232f, 74f, e)
-
-    Box(Modifier.fillMaxSize()) {
-        ClockText(time, ClockLarge, collapse) { e -> Triple(top(e), size(e) / 128f, 1f - e) }
-        ClockText(time, ClockSmall, collapse) { e -> Triple(top(e), size(e) / 44f, e) }
-        Text(
-            text = dateFormat.format(date),
-            style = Type.Date,
-            color = Palette.TextMuted,
-            modifier = Modifier.graphicsLayer {
-                val e = collapse()
-                translationX = SIDE.px.toPx()
-                translationY = (top(e) + size(e) + 14f - e * 16f).px.toPx()
-                alpha = (1f - e * 2.2f).coerceAtLeast(0f)
-            },
-        )
-    }
-}
-
-@Composable
-private fun ClockText(time: String, style: TextStyle, collapse: () -> Float, place: (Float) -> Triple<Float, Float, Float>) {
-    Text(
-        text = time,
-        style = style,
-        color = Palette.Text,
-        maxLines = 1,
-        softWrap = false,
-        modifier = Modifier.graphicsLayer {
-            val (top, scale, a) = place(collapse())
-            transformOrigin = TransformOrigin(0f, 0f)
-            translationX = SIDE.px.toPx()
-            translationY = top.px.toPx()
-            scaleX = scale
-            scaleY = scale
-            alpha = a
-        },
-    )
 }

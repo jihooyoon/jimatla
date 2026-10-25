@@ -43,4 +43,15 @@ class HomeRowsTest {
     fun `unknown category codes fall into Other`() {
         assertEquals(AppCategory.Other, AppCategory.of(42))
     }
+
+    @Test
+    fun `moving a favorite swaps it with its neighbor and stops at the ends`() {
+        val favs = listOf(tv.component, browser.component, music.component)
+
+        assertEquals(listOf(browser.component, tv.component, music.component), favs.moved(browser.component, -1))
+        assertEquals(listOf(tv.component, music.component, browser.component), favs.moved(browser.component, 1))
+        assertEquals(favs, favs.moved(tv.component, -1))
+        assertEquals(favs, favs.moved(music.component, 1))
+        assertEquals(favs, favs.moved(movies.component, 1))
+    }
 }

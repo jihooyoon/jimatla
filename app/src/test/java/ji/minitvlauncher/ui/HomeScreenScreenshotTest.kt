@@ -7,27 +7,37 @@ import android.graphics.Canvas
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Shader
+import android.os.Looper
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.isPopup
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.github.takahirom.roborazzi.captureScreenRoboImage
 import ji.minitvlauncher.AppEntry
 import ji.minitvlauncher.AppImage
 import ji.minitvlauncher.buildRows
 import ji.minitvlauncher.ui.theme.LauncherTheme
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import org.robolectric.Shadows.shadowOf
 import java.util.Calendar
 
 /** Renders the home screen at the TV's 1920×1080 to build/outputs/roborazzi for visual review. */
+@OptIn(ExperimentalTestApi::class)
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = "vi-w960dp-h540dp-land-xhdpi")
@@ -72,38 +82,97 @@ class HomeScreenScreenshotTest {
         }
     }
 
+    private var favorites by mutableStateOf(emptyList<ComponentName>())
+    private val launched = mutableListOf<AppEntry>()
+    private val actions = object : HomeActions {
+        override fun launch(app: AppEntry) { launched += app }
+        override fun setFavorites(favorites: List<ComponentName>) { this@HomeScreenScreenshotTest.favorites = favorites }
+        override fun showAppInfo(app: AppEntry) {}
+    }
+
     private val fixedTime = Calendar.getInstance().apply { set(2026, Calendar.OCTOBER, 22, 20, 45) }.time
 
-    private fun show(favorites: List<AppEntry>) {
+    private fun show(favoriteApps: List<AppEntry>) {
+        favorites = favoriteApps.map { it.component }
         compose.mainClock.autoAdvance = false
         compose.setContent {
             LauncherTheme {
-                HomeScreen(buildRows(apps, favorites.map { it.component }), images, onLaunch = {}, now = { fixedTime })
+                HomeScreen(buildRows(apps, favorites), images, actions, now = { fixedTime })
             }
         }
-        compose.mainClock.advanceTimeBy(1_000)
+        settle()
     }
+
+    /** Popups attach their window through the main looper, which the compose clock doesn't drive. */
+    private fun settle() {
+        repeat(3) {
+            compose.mainClock.advanceTimeBy(500)
+            shadowOf(Looper.getMainLooper()).idle()
+        }
+    }
+
+    /** Keys go to whichever window has focus: the menu popup while it is open. */
+    private fun press(keys: List<Key>) = keys.forEach { key ->
+        val popup = compose.onAllNodes(isPopup()).fetchSemanticsNodes().isNotEmpty()
+        (if (popup) compose.onNode(isPopup()) else compose.onNode(isRoot())).performKeyInput { pressKey(key) }
+        settle()
+    }
+
+    private fun shot(name: String) = compose.onNode(isRoot()).captureRoboImage("build/outputs/roborazzi/$name.png")
 
     @Test
     fun withFavorites() {
         show(apps.filterIndexed { i, _ -> i in listOf(0, 1, 4, 8, 11) })
-        compose.onRoot().captureRoboImage("build/outputs/roborazzi/home_favorites.png")
+        shot("home_favorites")
     }
 
     @Test
     fun emptyFavorites() {
         show(emptyList())
-        compose.onRoot().captureRoboImage("build/outputs/roborazzi/home_empty_favorites.png")
+        shot("home_empty_favorites")
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun scrolledDown() {
         show(apps.take(3))
-        compose.onRoot().performKeyInput { pressKey(Key.DirectionDown) }
-        compose.mainClock.advanceTimeBy(1_000)
-        compose.onRoot().performKeyInput { pressKey(Key.DirectionRight) }
-        compose.mainClock.advanceTimeBy(1_000)
-        compose.onRoot().captureRoboImage("build/outputs/roborazzi/home_scrolled.png")
+        press(listOf(Key.DirectionDown, Key.DirectionRight))
+        shot("home_scrolled")
+    }
+
+    @Test
+    fun menuOnCategoryAppAddsFavorite() {
+        show(apps.take(2))
+        press(listOf(Key.DirectionDown, Key.Menu))
+        captureScreenRoboImage("build/outputs/roborazzi/menu_category_app.png")
+
+        press(listOf(Key.DirectionDown, Key.DirectionCenter)) // "Thêm vào ưa thích"
+        assertEquals(apps.take(2).map { it.component } + apps[2].component, favorites)
+        shot("menu_added_toast")
+    }
+
+    @Test
+    fun arrangeMovesFavoriteAndBackFinishes() {
+        show(apps.take(3))
+        press(listOf(Key.Menu))
+        captureScreenRoboImage("build/outputs/roborazzi/menu_favorite.png")
+
+        press(listOf(Key.DirectionDown, Key.DirectionCenter)) // "Sắp xếp"
+        press(listOf(Key.DirectionRight))
+        assertEquals(listOf(apps[1], apps[0], apps[2]).map { it.component }, favorites)
+        shot("arranging")
+
+        press(listOf(Key.Back))
+        press(listOf(Key.DirectionCenter))
+        assertEquals(listOf(apps[0]), launched)
+    }
+
+    @Test
+    fun removingFavoriteKeepsFocusOnTheApp() {
+        show(apps.take(2))
+        compose.onNodeWithText("Phim").assertExists()
+        press(listOf(Key.Menu, Key.DirectionDown, Key.DirectionDown, Key.DirectionCenter)) // "Xóa ưa thích"
+        assertEquals(listOf(apps[1].component), favorites)
+        press(listOf(Key.DirectionCenter))
+        assertEquals(listOf(apps[0]), launched)
     }
 }
