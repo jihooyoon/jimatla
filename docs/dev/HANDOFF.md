@@ -7,6 +7,8 @@ Viết launcher Android TV tối giản (jimatla) thay `com.google.android.tvlau
 
 ## Trạng thái (26/10)
 Bản tối thiểu đã chạy trên TV làm màn Home, cuộn mượt (bản release). Đã commit + push lên `main`.
+**Đã dọn TV (26/10, theo yêu cầu):** bật lại `tvlauncher`, đặt lại làm Home, gỡ hẳn `ji.minitvlauncher`. TV đang ở trạng thái như trước khi thử launcher. Lần sau cài lại: cài APK → `pm disable-user --user 0 com.google.android.tvlauncher` (cần hỏi người dùng) → bấm Home thử.
+Cách làm tiếp: code + build trên máy tính, KHÔNG dùng máy ảo (người dùng không muốn). Xem giao diện bằng ảnh chụp Roborazzi (JVM) nếu cần; phần cần TV thật (độ mượt, RAM, nguồn vào, thông báo, vị trí, giọng nói, banner thật) gom lại để thử khi người dùng bật TV.
 
 ### Bước tiếp theo — làm theo thiết kế (thứ tự đã đề xuất, người dùng chưa phản đối)
 Trước khi code: đọc kỹ `docs/dev/design/Main.dc.html` + 3 ghi chú trong `docs/dev/design/canvas.json`. Mỗi bước xong cài lên TV, đo RAM (`dumpsys meminfo ji.minitvlauncher`) và độ mượt.
@@ -24,7 +26,7 @@ Trước khi code: đọc kỹ `docs/dev/design/Main.dc.html` + 3 ghi chú trong
 - `yes | sdkmanager --licenses` rồi `sdkmanager "platforms;android-37.0" "build-tools;36.0.0"`. Gradle tự tải qua `./gradlew`.
 - Tạo `local.properties` nếu cần (`sdk.dir=...`) — file này không commit.
 - adb: dùng bản của hệ thống (dnf `android-tools`). AGP tự cài `platform-tools` vào SDK — đừng thêm nó vào PATH (hai bản adb khác phiên bản sẽ tắt server của nhau).
-- Build + cài: `./gradlew assembleRelease && adb install -r app/build/outputs/apk/release/app-release.apk && adb shell cmd package compile -m speed -f ji.minitvlauncher`. Bản release hiện ký bằng khóa debug của máy → máy khác có khóa debug khác → lần đầu cài từ máy mới phải `adb uninstall ji.minitvlauncher` trước (mất cài đặt của app) hoặc chép `~/.android/debug.keystore` từ máy cũ sang.
+- Build + cài: `./gradlew assembleRelease && adb install -r app/build/outputs/apk/release/app-release.apk && adb shell cmd package compile -m speed -f ji.minitvlauncher`. Bản release hiện ký bằng khóa debug của máy. Nếu TV đang có bản ký bởi máy khác thì không cài đè được → gỡ trước hoặc chép `~/.android/debug.keystore` từ máy cũ sang.
 
 ### Đã làm (lịch sử)
 - Môi trường: JDK 25.0.4; SDK `platforms;android-37.0` + `build-tools;36.0.0`, chọn theo AGP **9.4.1** (tối đa API 37; build-tools mặc định 36.0.0; cần Gradle ≥ 9.6.0).
