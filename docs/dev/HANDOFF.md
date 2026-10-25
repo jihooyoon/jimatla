@@ -12,14 +12,20 @@ Cách làm tiếp: code + build trên máy tính, KHÔNG dùng máy ảo (ngư�
 
 ### Bước tiếp theo — làm theo thiết kế (thứ tự đã đề xuất, người dùng chưa phản đối)
 Trước khi code: đọc kỹ `docs/dev/design/Main.dc.html` + 3 ghi chú trong `docs/dev/design/canvas.json`. Mỗi bước xong cài lên TV, đo RAM (`dumpsys meminfo ji.minitvlauncher`) và độ mượt.
-1. Nền móng: lưu cài đặt (ưa thích, thứ tự, ngôn ngữ — DataStore), font Manrope, màu/kiểu chữ theo thiết kế.
-2. Màn chính: đồng hồ to + ngày (co lại khi cuộn), hàng Ưa thích, hàng theo `appCategory`, kiểu dự phòng cho app không có banner (đề xuất icon trên nền màu danh mục).
+1. ~~Nền móng~~ — XONG 26/10 (chưa commit, chưa thử trên TV): `ui/theme/Theme.kt` (đơn vị `Number.px`/`.tx` = px thiết kế ÷ 2, bảng màu `Palette`, font Manrope biến thể `res/font/manrope.ttf`, license ở `assets/licenses/manrope-OFL.txt`), `data/Settings.kt` (DataStore: danh sách ưa thích theo thứ tự).
+2. ~~Màn chính~~ — XONG 26/10 (chưa commit, chưa thử trên TV): `ui/HomeScreen.kt` + `HomeRows.kt`. Đồng hồ to → co lại khi cuộn (2 bản chữ nét 300/600 scale + mờ chéo qua `graphicsLayer`, không layout lại chữ mỗi khung hình); ngày; hàng Ưa thích (rỗng → khung viền đứt + gợi ý) + hàng theo `appCategory`; hàng đang chọn luôn cuộn lên vị trí hàng đầu (tắt bring-into-view dọc bằng `LocalBringIntoViewSpec`, tự `animateScrollTo`); ô 320×180 phóng 1.1 + viền sáng; nhãn dài mờ cuối / chạy chữ khi chọn; bấm Home khi đang ở Home → về đầu. Mép trên/dưới vùng cuộn dùng dải màu nền (không mask offscreen). App không có banner: nền màu danh mục + icon.
+   - Test: `./gradlew :app:testDebugUnitTest -Proborazzi.test.record=true` → ảnh 1920×1080 ở `app/build/outputs/roborazzi/` (Robolectric SDK 35, xem `app/src/test/resources/robolectric.properties`).
+   - Cần xem trên TV: độ mượt khi cuộn/chạy chữ, font biến thể trên Android 9, app thật phần lớn không khai báo `appCategory` → dồn vào "Khác".
+   - Đã thử và bỏ: khi Ưa thích rỗng giữ cuộn ở đầu → ô đang chọn bị đẩy xuống sát đáy, tệ hơn.
 3. Menu nhấn giữ OK: Mở / Thêm-Xóa ưa thích / Sắp xếp / Thông tin ứng dụng.
 4. Hàng nút trên: Bluetooth, Mạng, Cài đặt (mở màn hệ thống); Nguồn vào (thử thực tế); Thông báo (cấp quyền qua adb); Hình nền (tự viết trình chọn ảnh — nặng nhất).
 5. Thời tiết: vị trí hệ thống + Open-Meteo.
 6. Tìm kiếm app + nút giọng nói.
-7. Chọn ngôn ngữ trong app + bản dịch tiếng Anh đầy đủ.
-8. Dùng ổn vài ngày → gỡ `tvlauncher` và `tvrecommendations`.
+7. Ngôn ngữ: theo ngôn ngữ hệ thống, chưa có bản dịch → tiếng Anh. Đây chính là cơ chế tài nguyên mặc định của Android (`values/` = tiếng Anh, `values-vi/` = tiếng Việt) → không cần chọn ngôn ngữ trong app, không cần AppCompat. Việc còn lại: mọi chữ hiển thị đều lấy từ `strings.xml`, bản tiếng Anh luôn đầy đủ.
+
+### Thao tác riêng trên TV (không thuộc kế hoạch code)
+- Bỏ `tvlauncher` và `tvrecommendations`: chỉ làm khi người dùng yêu cầu và xác nhận rõ ràng ngay lúc đó; đề nghị trước đó không tính.
+- Cách làm: ưu tiên **disable** (`adb shell pm disable-user --user 0 <pkg>`), KHÔNG gỡ hẳn. App bị disable không chạy, không chiếm RAM, chỉ chiếm bộ nhớ lưu trữ; bật lại bằng `pm enable <pkg>`.
 
 ### Dựng môi trường trên máy mới
 - JDK 25 (`java-25-openjdk-devel` trên Fedora), Android cmdline-tools vào `~/Android/Sdk/cmdline-tools/latest`, `ANDROID_HOME=~/Android/Sdk`, thêm `cmdline-tools/latest/bin` vào PATH.
@@ -40,7 +46,7 @@ Trước khi code: đọc kỹ `docs/dev/design/Main.dc.html` + 3 ghi chú trong
 - Package name: **`ji.minitvlauncher`** — đã chốt (hợp lệ cho Play Store, không đổi được sau khi đăng). Tên hiển thị: "Mini TV Launcher".
 - Thời tiết: Open-Meteo (người dùng không định thu tiền → gói miễn phí OK); màn nhập vị trí tay làm sau, lấy **vị trí hiện tại từ hệ thống**. Đã kiểm tra: TV có network location (GMS `network`/`fused`, `location_providers_allowed=gps,network`, đã có last known location) → dùng `LocationManager` + `ACCESS_COARSE_LOCATION`, không cần thư viện Play Services. Vẫn cần màn nhập vị trí tay để dự phòng cho TV khác (người dùng sẽ thêm vào artifact thiết kế bên Cowork). Lưu ý: gói miễn phí của Open-Meteo chỉ cho dùng phi thương mại.
 - Font: **Manrope** (biến thể một file `Manrope[wght].ttf` từ google/fonts, ~165 KB, độ đậm 200–800, có tiếng Việt) — đã chốt sau khi cân nhắc dùng Roboto mặc định.
-- Ngôn ngữ: chọn ngôn ngữ ngay trong app; làm tiếng Việt + tiếng Anh trước (tao dịch), thêm tiếng khác sau. Android 9 → dùng `AppCompatDelegate.setApplicationLocales`.
+- Ngôn ngữ (đổi 26/10): KHÔNG có chọn ngôn ngữ trong app. Lấy theo ngôn ngữ hệ thống; ngôn ngữ chưa có bản dịch → tiếng Anh. Hiện có tiếng Anh (mặc định) + tiếng Việt, tao dịch; thêm tiếng khác sau bằng `values-xx/`.
 
 ## Thiết kế
 - Gốc: artifact claude.ai "TV Launcher tối giản" https://claude.ai/artifact/AhWv2xBkrUz94pM954GvUr (loại Design canvas; đọc bằng Artifact tool action `read` + `path` `project/Main.dc.html`, `project/canvas.json`).

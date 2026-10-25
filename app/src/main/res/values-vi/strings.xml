@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="apps">Ứng dụng</string>
-    <string name="no_apps">Không tìm thấy ứng dụng nào</string>
     <string name="launch_failed">Không mở được %1$s</string>
+
+    <string name="row_favorites">Ưa thích</string>
+    <string name="favorites_empty">Nhấn giữ một ứng dụng rồi chọn “Thêm vào ưa thích”</string>
+    <plurals name="row_app_count">
+        <item quantity="other">%d ứng dụng</item>
+    </plurals>
+
+    <string name="cat_video">Video và phim</string>
+    <string name="cat_audio">Âm nhạc và âm thanh</string>
+    <string name="cat_game">Trò chơi</string>
+    <string name="cat_image">Ảnh</string>
+    <string name="cat_social">Liên lạc và mạng xã hội</string>
+    <string name="cat_news">Tin tức</string>
+    <string name="cat_productivity">Công việc và tiện ích</string>
+    <string name="cat_maps">Bản đồ</string>
+    <string name="cat_accessibility">Hỗ trợ tiếp cận</string>
+    <string name="cat_other">Khác</string>
 </resources>

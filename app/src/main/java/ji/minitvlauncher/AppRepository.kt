@@ -9,24 +9,31 @@ import android.util.LruCache
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
+import ji.minitvlauncher.ui.AppImageSource
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.text.Collator
 
 data class AppEntry(
     val component: ComponentName,
     val label: String,
     val isLeanback: Boolean,
+    /** `ApplicationInfo.category`, i.e. the app's `android:appCategory`. */
+    val category: Int,
 )
 
-class AppRepository(private val context: Context) {
+/** A card image: the app's 16:9 banner, or its icon to be drawn on a category-colored tile. */
+data class AppImage(val bitmap: ImageBitmap, val isBanner: Boolean)
+
+class AppRepository(private val context: Context) : AppImageSource {
     private val pm = context.packageManager
 
     /** Decoded card images, so scrolling back over a row doesn't re-render drawables. */
-    private val images = object : LruCache<ComponentName, Pair<ImageBitmap, Boolean>>(16 * 1024 * 1024) {
-        override fun sizeOf(key: ComponentName, value: Pair<ImageBitmap, Boolean>) =
-            value.first.width * value.first.height * 4
+    private val images = object : LruCache<ComponentName, AppImage>(16 * 1024 * 1024) {
+        override fun sizeOf(key: ComponentName, value: AppImage) = value.bitmap.width * value.bitmap.height * 4
     }
 
-    fun cachedImage(entry: AppEntry): Pair<ImageBitmap, Boolean>? = images.get(entry.component)
+    override fun cachedImage(entry: AppEntry): AppImage? = images.get(entry.component)
 
     /** Apps with a TV entry point first; phone-only apps are included only if they have no TV one. */
     fun loadApps(): List<AppEntry> {
@@ -43,18 +50,20 @@ class AppRepository(private val context: Context) {
             .sortedWith(compareBy(collator) { it.label })
     }
 
-    /** Banner (16:9) if the app has one, otherwise its icon; rendered at display size to keep memory low. */
-    fun loadImage(entry: AppEntry, widthPx: Int, heightPx: Int): Pair<ImageBitmap, Boolean> =
-        images.get(entry.component) ?: renderImage(entry, widthPx, heightPx).also { images.put(entry.component, it) }
+    /** Rendered at display size to keep memory low; null if the app vanished meanwhile. */
+    override suspend fun loadImage(entry: AppEntry, widthPx: Int, heightPx: Int): AppImage? =
+        images.get(entry.component) ?: withContext(Dispatchers.IO) {
+            runCatching { renderImage(entry, widthPx, heightPx) }.getOrNull()
+        }?.also { images.put(entry.component, it) }
 
-    private fun renderImage(entry: AppEntry, widthPx: Int, heightPx: Int): Pair<ImageBitmap, Boolean> {
+    private fun renderImage(entry: AppEntry, widthPx: Int, heightPx: Int): AppImage {
         val info = pm.getActivityInfo(entry.component, 0)
         val banner: Drawable? = info.loadBanner(pm) ?: info.applicationInfo.loadBanner(pm)
         return if (banner != null) {
-            banner.toBitmap(widthPx, heightPx).asImageBitmap() to true
+            AppImage(banner.toBitmap(widthPx, heightPx).asImageBitmap(), isBanner = true)
         } else {
-            val side = heightPx / 2
-            info.loadIcon(pm).toBitmap(side, side).asImageBitmap() to false
+            val side = heightPx * 4 / 9
+            AppImage(info.loadIcon(pm).toBitmap(side, side).asImageBitmap(), isBanner = false)
         }
     }
 
@@ -71,5 +80,6 @@ class AppRepository(private val context: Context) {
         component = ComponentName(activityInfo.packageName, activityInfo.name),
         label = loadLabel(pm).toString(),
         isLeanback = isLeanback,
+        category = activityInfo.applicationInfo.category,
     )
 }
