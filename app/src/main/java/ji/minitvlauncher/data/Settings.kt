@@ -42,7 +42,23 @@ class Settings(private val context: Context) {
         }
     }
 
+    /** Last weather result as JSON, so the line shows before the next fetch. */
+    suspend fun weather(): String? = context.dataStore.data.map { it[WEATHER] }.first()
+
+    suspend fun setWeather(json: String) {
+        context.dataStore.edit { it[WEATHER] = json }
+    }
+
+    /** Whether the location permission was asked once already; the launcher never nags. */
+    suspend fun askedLocation(): Boolean = context.dataStore.data.map { it[ASKED_LOCATION] == 1 }.first()
+
+    suspend fun setAskedLocation() {
+        context.dataStore.edit { it[ASKED_LOCATION] = 1 }
+    }
+
     private companion object {
+        val WEATHER = stringPreferencesKey("weather")
+        val ASKED_LOCATION = intPreferencesKey("asked_location")
         val FAVORITES = stringPreferencesKey("favorites")
         val WALLPAPER = stringPreferencesKey("wallpaper")
         fun color(key: String) = intPreferencesKey("wallpaper_color_$key")

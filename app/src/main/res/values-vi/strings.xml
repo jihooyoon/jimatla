@@ -52,6 +52,16 @@
     <string name="picker_empty">Không tìm thấy ảnh nào. Cắm USB có ảnh, hoặc từ trình quản lý tệp chọn Chia sẻ → “Đặt làm hình nền TV”.</string>
     <string name="picker_permission">Cho phép truy cập ảnh để chọn hình nền</string>
 
+    <string name="weather_clear">Trời quang</string>
+    <string name="weather_partly_cloudy">Có mây</string>
+    <string name="weather_cloudy">Nhiều mây</string>
+    <string name="weather_fog">Sương mù</string>
+    <string name="weather_drizzle">Mưa phùn</string>
+    <string name="weather_rain">Mưa</string>
+    <string name="weather_snow">Tuyết</string>
+    <string name="weather_storm">Dông</string>
+    <string name="weather_updated">Cập nhật %1$s</string>
+
     <string name="cat_video">Video và phim</string>
     <string name="cat_audio">Âm nhạc và âm thanh</string>
     <string name="cat_game">Trò chơi</string>

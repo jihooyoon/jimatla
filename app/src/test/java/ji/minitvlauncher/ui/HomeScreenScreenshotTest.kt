@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.test.core.app.ApplicationProvider
 import ji.minitvlauncher.wallpaper.Backdrop
+import ji.minitvlauncher.weather.Weather
 import ji.minitvlauncher.wallpaper.WallpaperChoice
 import ji.minitvlauncher.wallpaper.WallpaperPipeline
 import android.graphics.Canvas
@@ -110,6 +111,7 @@ class HomeScreenScreenshotTest {
     }
     private val context get() = ApplicationProvider.getApplicationContext<Context>()
     private var wallpaper by mutableStateOf(WallpaperState())
+    private var weather by mutableStateOf<Weather?>(null)
     private val opened = mutableListOf<String>()
     private var status by mutableStateOf(SystemStatus())
 
@@ -120,7 +122,7 @@ class HomeScreenScreenshotTest {
         compose.mainClock.autoAdvance = false
         compose.setContent {
             LauncherTheme {
-                HomeScreen(buildRows(apps, favorites), images, actions, status, wallpaper, now = { fixedTime })
+                HomeScreen(buildRows(apps, favorites), images, actions, status, wallpaper, weather, now = { fixedTime })
             }
         }
         settle()
@@ -276,5 +278,16 @@ class HomeScreenScreenshotTest {
         captureScreenRoboImage("build/outputs/roborazzi/panel_wallpaper.png")
         press(listOf(Key.DirectionRight, Key.DirectionCenter))
         assertEquals(WallpaperChoice.Teal, wallpaper.choice)
+    }
+
+    @Test
+    fun weatherLineFreshAndStale() {
+        wallpaper = dusk()
+        weather = Weather(24, 27, 21, 2, isDay = true, place = "Hà Nội", fetchedAt = fixedTime.time - 5 * 60_000)
+        show(apps.take(3))
+        shot("weather_fresh")
+        weather = weather!!.copy(code = 61, fetchedAt = fixedTime.time - 3 * 60 * 60_000)
+        settle()
+        shot("weather_stale")
     }
 }

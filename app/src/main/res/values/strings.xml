@@ -58,6 +58,16 @@
     <string name="picker_empty">No pictures found. Plug in a USB drive with photos, or share a picture to “Set as TV wallpaper” from a file manager.</string>
     <string name="picker_permission">Allow access to photos to pick a wallpaper</string>
 
+    <string name="weather_clear">Clear</string>
+    <string name="weather_partly_cloudy">Partly cloudy</string>
+    <string name="weather_cloudy">Cloudy</string>
+    <string name="weather_fog">Fog</string>
+    <string name="weather_drizzle">Drizzle</string>
+    <string name="weather_rain">Rain</string>
+    <string name="weather_snow">Snow</string>
+    <string name="weather_storm">Thunderstorm</string>
+    <string name="weather_updated">Updated %1$s</string>
+
     <string name="cat_video">Video &amp; movies</string>
     <string name="cat_audio">Music &amp; audio</string>
     <string name="cat_game">Games</string>

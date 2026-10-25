@@ -44,6 +44,11 @@ import ji.minitvlauncher.wallpaper.mediaThumbnail
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.flow.collectLatest
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import ji.minitvlauncher.weather.Weather
+import ji.minitvlauncher.weather.WeatherSource
+import kotlinx.coroutines.delay
 import ji.minitvlauncher.ui.theme.LauncherTheme
 import kotlinx.coroutines.launch
 
@@ -58,6 +63,11 @@ class MainActivity : ComponentActivity(), HomeActions {
     private var wallpaper by mutableStateOf(WallpaperState())
     private var pickerImages by mutableStateOf<List<Uri>?>(null)
     private var shownCustomStamp = 0L
+    private lateinit var weatherSource: WeatherSource
+    private var weather by mutableStateOf<Weather?>(null)
+    private val locationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) refreshWeather()
+    }
 
     private val systemPicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let(::useAsWallpaper) }
     private val photoPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -73,6 +83,17 @@ class MainActivity : ComponentActivity(), HomeActions {
         repository = AppRepository(applicationContext)
         settings = Settings(applicationContext)
         wallpapers = Wallpapers(applicationContext, settings)
+        weatherSource = WeatherSource(applicationContext, settings)
+        lifecycleScope.launch { weather = weatherSource.cached() }
+        // Hourly while the home screen is showing; nothing runs while an app is in front.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    refreshWeather()
+                    delay(15 * 60 * 1000L)
+                }
+            }
+        }
         reload()
         lifecycleScope.launch { wallpapers.choice.collectLatest(::showWallpaper) }
         val filter = IntentFilter().apply {
@@ -98,7 +119,7 @@ class MainActivity : ComponentActivity(), HomeActions {
                     hasSystemNotificationPanel = remember { packageManager.resolveActivity(systemNotificationsIntent, 0) != null },
                     inputs = inputs,
                 )
-                HomeScreen(rows, repository, this@MainActivity, status, wallpaper, homePresses)
+                HomeScreen(rows, repository, this@MainActivity, status, wallpaper, weather, homePresses)
                 pickerImages?.let { images ->
                     ImagePicker(
                         images,
@@ -159,6 +180,20 @@ class MainActivity : ComponentActivity(), HomeActions {
     }
 
     override fun openNotification(item: NotificationItem) = NotificationReader.open(item.key)
+
+    /** Asks for location once, ever; without it the weather line simply stays hidden. */
+    private fun refreshWeather() {
+        lifecycleScope.launch {
+            if (!weatherSource.hasLocationPermission()) {
+                if (!settings.askedLocation()) {
+                    settings.setAskedLocation()
+                    locationPermission.launch(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                }
+                return@launch
+            }
+            weatherSource.refresh(System.currentTimeMillis(), resources.configuration.locales[0])?.let { weather = it }
+        }
+    }
 
     override fun selectWallpaper(choice: WallpaperChoice) {
         lifecycleScope.launch { wallpapers.select(choice) }

@@ -40,6 +40,23 @@ object Icons {
     val Mic = stroke(1.6f, "M9 6a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0z", "M5.5 11a6.5 6.5 0 0 0 13 0", "M12 17.5V21")
     val Close = stroke(1.8f, "M6 6l12 12", "M18 6L6 18")
 
+    // Weather (stroke 1.5); CloudSun is the design's, the rest drawn to match it.
+    val CloudSun = stroke(
+        1.5f, "M8.5 5.2V3.6", "M4.2 6.9L3.1 5.8", "M3.2 10.8H1.8", "M12.8 6.9l1.1-1.1", "M5.6 12.6a3.6 3.6 0 1 1 6.3-3.4",
+        "M8.5 20h9a3.5 3.5 0 0 0 .4-7 5 5 0 0 0-9.6 1.4A2.8 2.8 0 0 0 8.5 20z",
+    )
+    val Sun = stroke(
+        1.5f, circle(12f, 12f, 4f), "M12 2.5v2", "M12 19.5v2", "M2.5 12h2", "M19.5 12h2",
+        "M5.3 5.3l1.4 1.4", "M17.3 17.3l1.4 1.4", "M5.3 18.7l1.4-1.4", "M17.3 6.7l1.4-1.4",
+    )
+    val Moon = stroke(1.5f, "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z")
+    val Cloud = stroke(1.5f, "M7 19h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.6 1.5A3.3 3.3 0 0 0 7 19z")
+    val Fog = stroke(1.5f, "M7 10.5a5 5 0 0 1 9.6-1.5", "M4 14h16", "M6 17.5h12", "M8 21h8")
+    val Rain = stroke(1.5f, CLOUD_HIGH, "M8.5 18l-1 2.5", "M12.5 18l-1 2.5", "M16.5 18l-1 2.5")
+    val Snow = stroke(1.5f, CLOUD_HIGH, fill = listOf(circle(8f, 19.5f, 0.9f), circle(12f, 21f, 0.9f), circle(16f, 19.5f, 0.9f)))
+    val Storm = stroke(1.5f, CLOUD_HIGH, "M12.5 16l-2 3.5h3l-2 3.5")
+
+    private const val CLOUD_HIGH = "M7 15h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.6 1.5A3.3 3.3 0 0 0 7 15z"
     private const val WIFI_1 = "M2 8.8a15 15 0 0 1 20 0"
     private const val WIFI_2 = "M5 12.6a10 10 0 0 1 14 0"
     private const val WIFI_3 = "M8.5 16.4a5 5 0 0 1 7 0"

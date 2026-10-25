@@ -104,6 +104,7 @@ import ji.minitvlauncher.system.NetStatus
 import ji.minitvlauncher.system.NotificationItem
 import ji.minitvlauncher.system.TvInputItem
 import ji.minitvlauncher.wallpaper.Backdrop
+import ji.minitvlauncher.weather.Weather
 import ji.minitvlauncher.wallpaper.WallpaperChoice
 import ji.minitvlauncher.wallpaper.WallpaperPipeline
 import androidx.compose.animation.core.Animatable
@@ -195,6 +196,7 @@ fun HomeScreen(
     actions: HomeActions,
     status: SystemStatus = SystemStatus(),
     wallpaper: WallpaperState = WallpaperState(),
+    weather: Weather? = null,
     homePresses: Int = 0,
     now: () -> Date = ::Date,
 ) {
@@ -238,7 +240,7 @@ fun HomeScreen(
         BackdropImage(wallpaper.backdrop.frame, collapse)
         RowsViewport(rows, images, actions, ui, onMenuAction, onMove, scroll, firstTile, firstRowWithApps)
         ViewportEdges(collapse)
-        Clock(collapse, now)
+        Clock(collapse, now, weather)
         TopBar(topButtons(status, actions, ui))
         if (ui.menuFor != null) Box(Modifier.fillMaxSize().background(Color(0x59050608)))
         if (ui.panel != null) Box(Modifier.fillMaxSize().background(ScrimColor))
