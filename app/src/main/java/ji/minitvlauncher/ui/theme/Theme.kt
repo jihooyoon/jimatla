@@ -25,6 +25,7 @@ val Number.tx: TextUnit get() = (toFloat() / 2f).sp
 object Palette {
     val Background = Color(0xFF0E0F11)
     val Panel = Color(0xFF17181C)
+    val PanelEdge = Color(0xFF26272B)
     val Surface = Color(0xFF1F2025)
     val SurfaceSelected = Color(0xFF24262B)
     val Border = Color(0xFF2E3035)

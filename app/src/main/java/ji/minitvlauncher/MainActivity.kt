@@ -22,8 +22,18 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import ji.minitvlauncher.data.Settings
+import ji.minitvlauncher.system.NetKind
+import ji.minitvlauncher.system.NetStatus
+import ji.minitvlauncher.system.NotificationItem
+import ji.minitvlauncher.system.NotificationReader
+import ji.minitvlauncher.system.TvInputItem
+import ji.minitvlauncher.system.networkStatus
+import ji.minitvlauncher.system.switchToInputIntent
+import ji.minitvlauncher.system.tvInputs
 import ji.minitvlauncher.ui.HomeActions
 import ji.minitvlauncher.ui.HomeScreen
+import ji.minitvlauncher.ui.SystemScreen
+import ji.minitvlauncher.ui.SystemStatus
 import ji.minitvlauncher.ui.theme.LauncherTheme
 import kotlinx.coroutines.launch
 
@@ -32,6 +42,8 @@ class MainActivity : ComponentActivity(), HomeActions {
     private lateinit var settings: Settings
     private var apps by mutableStateOf<List<AppEntry>?>(null)
     private var homePresses by mutableIntStateOf(0)
+    private var inputs by mutableStateOf(emptyList<TvInputItem>())
+    private var notificationAccess by mutableStateOf(false)
 
     private val packageReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) = reload()
@@ -56,9 +68,24 @@ class MainActivity : ComponentActivity(), HomeActions {
                 val favorites by settings.favorites.collectAsStateWithLifecycle(emptyList())
                 val loaded = apps ?: return@LauncherTheme
                 val rows = remember(loaded, favorites) { buildRows(loaded, favorites) }
-                HomeScreen(rows, repository, this@MainActivity, homePresses)
+                val network by remember { networkStatus(this@MainActivity) }.collectAsStateWithLifecycle(NetStatus(NetKind.Wifi))
+                val notifications by NotificationReader.notifications.collectAsStateWithLifecycle()
+                val listening by NotificationReader.isConnected.collectAsStateWithLifecycle()
+                val status = SystemStatus(
+                    network = network,
+                    notifications = notifications.takeIf { listening || notificationAccess },
+                    hasSystemNotificationPanel = remember { packageManager.resolveActivity(systemNotificationsIntent, 0) != null },
+                    inputs = inputs,
+                )
+                HomeScreen(rows, repository, this@MainActivity, status, homePresses)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        notificationAccess = NotificationReader.hasAccess(this)
+        Thread { tvInputs(this).also { runOnUiThread { inputs = it } } }.start()
     }
 
     /** Home pressed while already home: back to the top. */
@@ -80,6 +107,32 @@ class MainActivity : ComponentActivity(), HomeActions {
         lifecycleScope.launch { settings.setFavorites(favorites) }
     }
 
+    override fun openSystem(screen: SystemScreen) {
+        val candidates = when (screen) {
+            SystemScreen.Bluetooth -> listOf(SystemSettings.ACTION_BLUETOOTH_SETTINGS)
+            SystemScreen.Network -> listOf(SystemSettings.ACTION_WIFI_SETTINGS, SystemSettings.ACTION_WIRELESS_SETTINGS)
+            SystemScreen.Settings -> emptyList()
+        } + SystemSettings.ACTION_SETTINGS
+        val opened = candidates.any { action -> tryStart(Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        if (!opened) Toast.makeText(this, getString(R.string.launch_failed, getString(R.string.settings)), Toast.LENGTH_SHORT).show()
+    }
+
+    override fun openSystemNotifications(): Boolean = tryStart(systemNotificationsIntent)
+
+    override fun switchInput(input: TvInputItem) {
+        if (!tryStart(switchToInputIntent(input))) {
+            Toast.makeText(this, getString(R.string.launch_failed, input.label), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun openNotification(item: NotificationItem) = NotificationReader.open(item.key)
+
+    override fun clearNotifications() = NotificationReader.dismissAll()
+
+    private fun tryStart(intent: Intent): Boolean =
+        packageManager.resolveActivity(intent, 0) != null &&
+            runCatching { startActivity(intent) }.isSuccess
+
     override fun showAppInfo(app: AppEntry) {
         val intent = Intent(SystemSettings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", app.component.packageName, null))
         try {
@@ -100,3 +153,7 @@ class MainActivity : ComponentActivity(), HomeActions {
         }
     }
 }
+
+/** Android TV's system notification panel, on versions that have one. */
+private val systemNotificationsIntent =
+    Intent("com.android.tv.action.OPEN_NOTIFICATIONS_PANEL").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

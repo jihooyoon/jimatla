@@ -19,6 +19,21 @@
     <string name="arranging_move">◀ ▶  Đổi vị trí</string>
     <string name="arranging_done">OK / Back  Xong</string>
 
+    <string name="inputs">Nguồn vào</string>
+    <string name="inputs_title">Chọn đầu vào</string>
+    <string name="bluetooth">Bluetooth và phụ kiện</string>
+    <string name="settings">Cài đặt</string>
+    <string name="net_weak">%1$s · Tín hiệu yếu</string>
+    <string name="net_offline">Không có kết nối mạng</string>
+    <string name="net_no_internet">%1$s · Không có Internet</string>
+    <string name="notifications">Thông báo</string>
+    <string name="notifications_none">Không có thông báo</string>
+    <plurals name="notifications_new">
+        <item quantity="other">%d thông báo mới</item>
+    </plurals>
+    <string name="notifications_clear_all">Xóa tất cả</string>
+    <string name="notifications_empty">Bạn đã xem hết thông báo.</string>
+
     <string name="cat_video">Video và phim</string>
     <string name="cat_audio">Âm nhạc và âm thanh</string>
     <string name="cat_game">Trò chơi</string>

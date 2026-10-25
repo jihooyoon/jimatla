@@ -25,6 +25,10 @@ import com.github.takahirom.roborazzi.captureScreenRoboImage
 import ji.minitvlauncher.AppEntry
 import ji.minitvlauncher.AppImage
 import ji.minitvlauncher.buildRows
+import ji.minitvlauncher.system.NetKind
+import ji.minitvlauncher.system.NetStatus
+import ji.minitvlauncher.system.NotificationItem
+import ji.minitvlauncher.system.TvInputItem
 import ji.minitvlauncher.ui.theme.LauncherTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -88,7 +92,14 @@ class HomeScreenScreenshotTest {
         override fun launch(app: AppEntry) { launched += app }
         override fun setFavorites(favorites: List<ComponentName>) { this@HomeScreenScreenshotTest.favorites = favorites }
         override fun showAppInfo(app: AppEntry) {}
+        override fun openSystem(screen: SystemScreen) { opened += screen.name }
+        override fun openSystemNotifications() = false
+        override fun switchInput(input: TvInputItem) { opened += input.label }
+        override fun openNotification(item: NotificationItem) { opened += item.title }
+        override fun clearNotifications() {}
     }
+    private val opened = mutableListOf<String>()
+    private var status by mutableStateOf(SystemStatus())
 
     private val fixedTime = Calendar.getInstance().apply { set(2026, Calendar.OCTOBER, 22, 20, 45) }.time
 
@@ -97,7 +108,7 @@ class HomeScreenScreenshotTest {
         compose.mainClock.autoAdvance = false
         compose.setContent {
             LauncherTheme {
-                HomeScreen(buildRows(apps, favorites), images, actions, now = { fixedTime })
+                HomeScreen(buildRows(apps, favorites), images, actions, status, now = { fixedTime })
             }
         }
         settle()
@@ -174,5 +185,57 @@ class HomeScreenScreenshotTest {
         assertEquals(listOf(apps[1].component), favorites)
         press(listOf(Key.DirectionCenter))
         assertEquals(listOf(apps[0]), launched)
+    }
+
+    private val sampleNotifications = listOf(
+        NotificationItem("a", "Hệ thống", fixedTime.time - 10 * 60_000, "Có bản cập nhật phần mềm", "Cài đặt khi TV không sử dụng", true),
+        NotificationItem("b", "Phim", fixedTime.time - 60 * 60_000, "Đã có tập mới", "Tên phim · Tập 12", true),
+    )
+
+    @Test
+    fun topBarTooltipAndBadge() {
+        status = SystemStatus(
+            network = NetStatus(NetKind.Wifi, "Nha_Minh_5G"),
+            notifications = sampleNotifications,
+            inputs = listOf(TvInputItem("hdmi1", "HDMI 1", true)),
+        )
+        show(apps.take(2))
+        press(listOf(Key.DirectionUp))
+        shot("topbar_focused")
+    }
+
+    @Test
+    fun topBarOfflineWithoutNotificationAccess() {
+        status = SystemStatus(network = NetStatus(NetKind.Offline))
+        show(apps.take(2))
+        press(listOf(Key.DirectionUp))
+        shot("topbar_offline")
+    }
+
+    @Test
+    fun notificationPanelOpensAndForwardsClicks() {
+        status = SystemStatus(notifications = sampleNotifications)
+        show(apps.take(2))
+        press(listOf(Key.DirectionUp))
+        // Leftmost is Bluetooth (no inputs here); the bell is two to the right.
+        repeat(4) { press(listOf(Key.DirectionLeft)) }
+        press(listOf(Key.DirectionRight, Key.DirectionRight))
+        compose.onNodeWithText("2 thông báo mới").assertExists()
+        press(listOf(Key.DirectionCenter))
+        captureScreenRoboImage("build/outputs/roborazzi/panel_notifications.png")
+        press(listOf(Key.DirectionCenter))
+        assertEquals(listOf("Có bản cập nhật phần mềm"), opened)
+    }
+
+    @Test
+    fun inputPanel() {
+        status = SystemStatus(inputs = listOf(TvInputItem("h1", "HDMI 1", true), TvInputItem("h2", "HDMI 2", true), TvInputItem("tv", "Ăng-ten", false)))
+        show(apps.take(2))
+        press(listOf(Key.DirectionUp))
+        repeat(5) { press(listOf(Key.DirectionLeft)) }
+        press(listOf(Key.DirectionCenter))
+        captureScreenRoboImage("build/outputs/roborazzi/panel_inputs.png")
+        press(listOf(Key.DirectionDown, Key.DirectionCenter))
+        assertEquals(listOf("HDMI 2"), opened)
     }
 }

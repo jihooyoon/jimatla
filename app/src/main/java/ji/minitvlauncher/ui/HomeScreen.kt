@@ -99,6 +99,10 @@ import ji.minitvlauncher.R
 import ji.minitvlauncher.RowKey
 import ji.minitvlauncher.appCategory
 import ji.minitvlauncher.moved
+import ji.minitvlauncher.system.NetKind
+import ji.minitvlauncher.system.NetStatus
+import ji.minitvlauncher.system.NotificationItem
+import ji.minitvlauncher.system.TvInputItem
 import ji.minitvlauncher.ui.theme.Palette
 import ji.minitvlauncher.ui.theme.Type
 import ji.minitvlauncher.ui.theme.px
@@ -117,7 +121,26 @@ interface HomeActions {
     fun launch(app: AppEntry)
     fun setFavorites(favorites: List<ComponentName>)
     fun showAppInfo(app: AppEntry)
+    fun openSystem(screen: SystemScreen)
+    /** Tries the system's notification panel; false if this TV has none the launcher may open. */
+    fun openSystemNotifications(): Boolean
+    fun switchInput(input: TvInputItem)
+    fun openNotification(item: NotificationItem)
+    fun clearNotifications()
 }
+
+enum class SystemScreen { Bluetooth, Network, Settings }
+
+/** Live system state behind the top bar. */
+data class SystemStatus(
+    val network: NetStatus = NetStatus(NetKind.Wifi),
+    /** Null when the launcher may not read notifications. */
+    val notifications: List<NotificationItem>? = null,
+    val hasSystemNotificationPanel: Boolean = false,
+    val inputs: List<TvInputItem> = emptyList(),
+)
+
+private enum class Panel { Inputs, Notifications }
 
 // Layout from the design, in 1920×1080 design pixels.
 private const val VIEWPORT_TOP = 160
@@ -132,6 +155,7 @@ internal const val FOCUSED_SCALE = 352f / TILE_W
 @Stable
 private class HomeUi {
     var menuFor by mutableStateOf<ComponentName?>(null)
+    var panel by mutableStateOf<Panel?>(null)
     var arranging by mutableStateOf<ComponentName?>(null)
     var pendingFocus by mutableStateOf<ComponentName?>(null)
     var toast by mutableStateOf<Int?>(null)
@@ -149,6 +173,7 @@ fun HomeScreen(
     rows: List<HomeRow>,
     images: AppImageSource,
     actions: HomeActions,
+    status: SystemStatus = SystemStatus(),
     homePresses: Int = 0,
     now: () -> Date = ::Date,
 ) {
@@ -190,14 +215,33 @@ fun HomeScreen(
         RowsViewport(rows, images, actions, ui, onMenuAction, onMove, scroll, firstTile, firstRowWithApps)
         ViewportEdges(collapse)
         Clock(collapse, now)
+        TopBar(topButtons(status, actions, ui))
         if (ui.menuFor != null) Box(Modifier.fillMaxSize().background(Color(0x59050608)))
+        if (ui.panel != null) Box(Modifier.fillMaxSize().background(ScrimColor))
         BottomPill(ui, rows)
+    }
+
+    when (ui.panel) {
+        Panel.Inputs -> InputPanel(
+            status.inputs,
+            onPick = { ui.panel = null; actions.switchInput(it) },
+            onDismiss = { ui.panel = null },
+        )
+        Panel.Notifications -> NotificationPanel(
+            status.notifications.orEmpty(),
+            now = now().time,
+            onOpen = { ui.panel = null; actions.openNotification(it) },
+            onClearAll = { actions.clearNotifications() },
+            onDismiss = { ui.panel = null },
+        )
+        null -> Unit
     }
 
     LaunchedEffect(firstRowWithApps >= 0, homePresses) {
         if (firstRowWithApps < 0) return@LaunchedEffect
         if (homePresses > 0) {
             ui.menuFor = null
+            ui.panel = null
             ui.arranging = null
             scroll.animateScrollTo(0)
         }
@@ -207,6 +251,37 @@ fun HomeScreen(
         delay(1800)
         ui.toast = null
     }
+}
+
+/** Inputs only on TVs that have them; the bell only when there is something it can open. */
+@Composable
+private fun topButtons(status: SystemStatus, actions: HomeActions, ui: HomeUi): List<TopButton> = buildList {
+    if (status.inputs.isNotEmpty()) {
+        add(TopButton("input", Icons.Input, stringResource(R.string.inputs), onClick = { ui.panel = Panel.Inputs }))
+    }
+    add(TopButton("bt", Icons.Bluetooth, stringResource(R.string.bluetooth), onClick = { actions.openSystem(SystemScreen.Bluetooth) }))
+    val (netIcon, netWarn, netLabel) = networkButtonLook(status.network)
+    add(
+        TopButton(
+            "net", netIcon, netLabel,
+            onClick = { actions.openSystem(SystemScreen.Network) },
+            warn = netWarn,
+            alertDot = status.network.kind == NetKind.NoInternet,
+        ),
+    )
+    val notifications = status.notifications
+    if (notifications != null || status.hasSystemNotificationPanel) {
+        val count = notifications?.size ?: 0
+        add(
+            TopButton(
+                "notif", Icons.Bell,
+                if (count > 0) pluralStringResource(R.plurals.notifications_new, count, count) else stringResource(R.string.notifications),
+                onClick = { if (!actions.openSystemNotifications() && notifications != null) ui.panel = Panel.Notifications },
+                badge = if (count > 0) (if (count > 9) "9+" else count.toString()) else null,
+            ),
+        )
+    }
+    add(TopButton("settings", Icons.Settings, stringResource(R.string.settings), onClick = { actions.openSystem(SystemScreen.Settings) }))
 }
 
 @OptIn(ExperimentalFoundationApi::class)
