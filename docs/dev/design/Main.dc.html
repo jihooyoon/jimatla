@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>TV Launcher – Màn hình chính</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#E8E6E1}a:hover{color:#FFFFFF}
+@keyframes tvMarquee{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(calc(-100% + 352px))}}
+@keyframes tvPanelIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes tvLaunch{from{transform:scale(0.2);opacity:0;border-radius:24px}to{transform:none;opacity:1;border-radius:0}}
+@keyframes tvPop{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}
+@keyframes tvNudgeL{0%,100%{transform:translateX(0)}50%{transform:translateX(-5px)}}
+@keyframes tvNudgeR{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
+.tv-row{transition:background 140ms ease}
+.tv-row:hover,.tv-row:focus-visible{background:#2A2C31 !important;outline:none}
+.tv-ghost:hover,.tv-ghost:focus-visible{background:#F4F2EE !important;color:#0E0F11 !important;outline:none}
+.tv-menu-item{transition:background 120ms ease,color 120ms ease}
+.tv-menu-item:hover,.tv-menu-item:focus-visible{background:#F4F2EE !important;color:#0E0F11 !important;outline:none}
+.tv-arrow:hover{background:#FFFFFF !important}
+.tv-res-tile{transition:box-shadow 140ms ease}
+.tv-res:hover .tv-res-tile,.tv-res:focus-visible .tv-res-tile{box-shadow:0 0 0 4px #F4F2EE,0 20px 40px rgba(0,0,0,0.5)}
+#tv-search::placeholder{color:#6E6C67}
+.tv-noscroll{scrollbar-width:none}
+.tv-noscroll::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div ref="{{rootRef}}" style="position: relative; width: 1920px; height: 1080px; background: {{bg}}; color: #E8E6E1; font-family: Manrope, system-ui, sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none">
+
+  <div aria-hidden="true" style="{{wallLayer}}">
+   <div style="{{wallBox}}">
+    <sc-if value="{{wall.c32}}" hint-placeholder-val="{{ false }}">
+      <img src="/_blob/a3f190017bc979c7d34d3971f6b72243" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover">
+    </sc-if>
+    <sc-if value="{{wall.c23}}" hint-placeholder-val="{{ false }}">
+      <img src="/_blob/4839892b0a0e32667ce31d5434b67e23" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover">
+    </sc-if>
+    <sc-if value="{{wall.dusk}}" hint-placeholder-val="{{ true }}">
+      <img src="/_blob/34df44efae4e572f60f646dec24bd47d" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover">
+    </sc-if>
+    <sc-if value="{{wall.teal}}" hint-placeholder-val="{{ false }}">
+      <img src="/_blob/30cf235ff73e71c5e902b0743f190abb" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover">
+    </sc-if>
+    <sc-if value="{{wall.desert}}" hint-placeholder-val="{{ false }}">
+      <img src="/_blob/7e717e0069232baebe851cd8157a394d" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover">
+    </sc-if>
+    <div style="{{scrim}}"></div>
+   </div>
+  </div>
+
+  <div data-vp="1" class="tv-noscroll" onScroll="{{onVpScroll}}" style="position: absolute; top: 160px; bottom: 0; left: 0; right: 0; overflow-x: hidden; overflow-y: auto; scroll-behavior: smooth; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 72px, #000 calc(100% - 64px), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 72px, #000 calc(100% - 64px), transparent 100%)">
+    <div style="display: flex; flex-direction: column; gap: {{rowGap}}px; padding: 370px 0 360px">
+      <sc-for list="{{rows}}" as="row" hint-placeholder-count="4">
+        <section data-row="1" aria-label="{{row.title}}" style="display: flex; flex-direction: column; gap: 4px">
+          <div style="display: flex; align-items: baseline; gap: 20px; padding: 0 120px">
+            <h2 style="{{row.titleStyle}}">{{row.title}}</h2>
+            <div style="font-size: 22px; color: #8A8882">{{row.meta}}</div>
+          </div>
+          <div data-strip="1" class="tv-noscroll" style="position: relative; display: flex; gap: 32px; align-items: flex-start; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; padding: 24px 120px 18px; height: 230px">
+            <sc-if value="{{row.empty}}" hint-placeholder-val="{{ false }}">
+              <div style="flex: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 672px; height: 180px; border-radius: 12px; border: 2px dashed #3A3B3F; color: #8A8882; font-size: 24px; padding: 0 40px; text-align: center">Nhấn giữ một ứng dụng rồi chọn “Thêm vào ưa thích”</div>
+            </sc-if>
+            <sc-for list="{{row.apps}}" as="app" hint-placeholder-count="6">
+              <div style="{{app.wrapStyle}}">
+                <button data-key="{{app.id}}" aria-label="{{app.aria}}" onClick="{{app.click}}" onFocus="{{app.go}}" onMouseEnter="{{app.hover}}" onKeyDown="{{app.keyDown}}" onKeyUp="{{app.keyUp}}" onPointerDown="{{app.pDown}}" onPointerUp="{{app.pUp}}" onPointerLeave="{{app.pUp}}" onContextMenu="{{app.ctx}}" style="{{app.colStyle}}">
+                  <span style="{{app.tileStyle}}">
+                    <span aria-hidden="true" style="font-size: 26px; font-weight: 600; color: rgba(255,255,255,0.55); letter-spacing: 2px">BANNER 16:9</span>
+                  </span>
+                  <span data-lbl-outer="{{app.id}}" style="{{app.labelOuter}}">
+                    <span data-lbl-inner="1" style="{{app.labelInner}}">{{app.label}}</span>
+                  </span>
+                </button>
+                <sc-if value="{{app.arranging}}" hint-placeholder-val="{{ false }}">
+                  <sc-if value="{{app.canLeft}}" hint-placeholder-val="{{ true }}">
+                    <button class="tv-arrow" tabindex="-1" aria-label="Chuyển sang trái" onClick="{{app.moveLeft}}" style="position: absolute; left: -44px; top: 71px; width: 56px; height: 56px; border-radius: 50%; border: none; padding: 0; display: flex; align-items: center; justify-content: center; background: #F4F2EE; color: #0E0F11; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 3; animation: tvNudgeL 1.2s ease-in-out infinite">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+                    </button>
+                  </sc-if>
+                  <sc-if value="{{app.canRight}}" hint-placeholder-val="{{ true }}">
+                    <button class="tv-arrow" tabindex="-1" aria-label="Chuyển sang phải" onClick="{{app.moveRight}}" style="position: absolute; right: -44px; top: 71px; width: 56px; height: 56px; border-radius: 50%; border: none; padding: 0; display: flex; align-items: center; justify-content: center; background: #F4F2EE; color: #0E0F11; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 3; animation: tvNudgeR 1.2s ease-in-out infinite">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                  </sc-if>
+                </sc-if>
+              </div>
+            </sc-for>
+            <span aria-hidden="true" style="flex: none; width: 88px; height: 1px"></span>
+          </div>
+        </section>
+      </sc-for>
+    </div>
+  </div>
+
+  <div data-clock="1" aria-label="20:45" style="{{clockStyle}}">20:45</div>
+  <div aria-hidden="{{dateHidden}}" style="{{dateStyle}}">Thứ Năm, 22 tháng 10</div>
+  <sc-if value="{{weatherOn}}" hint-placeholder-val="{{ true }}">
+    <div aria-hidden="{{dateHidden}}" style="{{weatherStyle}}">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#C9C7C1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; transform: translateY(-3px)"><path d="M8.5 5.2V3.6"></path><path d="M4.2 6.9L3.1 5.8"></path><path d="M3.2 10.8H1.8"></path><path d="M12.8 6.9l1.1-1.1"></path><path d="M5.6 12.6a3.6 3.6 0 1 1 6.3-3.4"></path><path d="M8.5 20h9a3.5 3.5 0 0 0 .4-7 5 5 0 0 0-9.6 1.4A2.8 2.8 0 0 0 8.5 20z"></path></svg>
+      <span style="display: flex; align-items: baseline; gap: 14px">
+        <span style="color: #E8E6E1">24°</span>
+        <span>Nhiều mây</span>
+        <span style="color: #8A8882">·  Hà Nội  ·  27° / 21°</span>
+        <sc-if value="{{weatherStale}}" hint-placeholder-val="{{ false }}">
+          <span style="color: #8A8882">·  Cập nhật 3 giờ trước</span>
+        </sc-if>
+      </span>
+    </div>
+  </sc-if>
+
+  <div style="{{pillWrap}}">
+    <button aria-label="Tìm kiếm ứng dụng" onClick="{{openSearch}}" onMouseEnter="{{hIn.search}}" onMouseLeave="{{hOut}}" onFocus="{{hIn.search}}" onBlur="{{hOut}}" style="{{searchPill}}">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.2-4.2"></path></svg>
+      <span>Tìm kiếm</span>
+    </button>
+  </div>
+
+  <header style="position: absolute; top: 64px; right: 120px; display: flex; align-items: center; z-index: 2">
+    <div style="display: flex; align-items: center; gap: 20px">
+
+      <div style="position: relative; display: flex; justify-content: center">
+        <button aria-label="Chọn nguồn vào" onClick="{{openInput}}" onMouseEnter="{{hIn.input}}" onMouseLeave="{{hOut}}" onFocus="{{hIn.input}}" onBlur="{{hOut}}" style="{{btn.input}}">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"></path><path d="M3 12h11"></path><path d="M10 8l4 4-4 4"></path></svg>
+        </button>
+        <sc-if value="{{hv.input}}" hint-placeholder-val="{{ false }}">
+          <div style="{{labelStyle}}">{{lbl.input}}</div>
+        </sc-if>
+      </div>
+
+      <div style="position: relative; display: flex; justify-content: center">
+        <button aria-label="Bluetooth và phụ kiện" onClick="{{openBt}}" onMouseEnter="{{hIn.bt}}" onMouseLeave="{{hOut}}" onFocus="{{hIn.bt}}" onBlur="{{hOut}}" style="{{btn.bt}}">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10-5 5V2l5 5L7 17"></path></svg>
+        </button>
+        <sc-if value="{{hv.bt}}" hint-placeholder-val="{{ false }}">
+          <div style="{{labelStyle}}">{{lbl.bt}}</div>
+        </sc-if>
+      </div>
+
+      <div style="position: relative; display: flex; justify-content: center">
+        <button aria-label="{{netAria}}" onClick="{{openNet}}" onMouseEnter="{{hIn.net}}" onMouseLeave="{{hOut}}" onFocus="{{hIn.net}}" onBlur="{{hOut}}" style="{{btn.net}}">
+          <sc-if value="{{net.wifi}}" hint-placeholder-val="{{ true }}">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.8a15 15 0 0 1 20 0"></path><path d="M5 12.6a10 10 0 0 1 14 0"></path><path d="M8.5 16.4a5 5 0 0 1 7 0"></path><circle cx="12" cy="20" r="1" fill="currentColor"></circle></svg>
+          </sc-if>
+          <sc-if value="{{net.weak}}" hint-placeholder-val="{{ false }}">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.8a15 15 0 0 1 20 0" opacity="0.3"></path><path d="M5 12.6a10 10 0 0 1 14 0" opacity="0.3"></path><path d="M8.5 16.4a5 5 0 0 1 7 0"></path><circle cx="12" cy="20" r="1" fill="currentColor"></circle></svg>
+          </sc-if>
+          <sc-if value="{{net.ethernet}}" hint-placeholder-val="{{ false }}">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11h-4v3H8v-3H4z"></path><path d="M8.5 9v3"></path><path d="M12 9v3"></path><path d="M15.5 9v3"></path></svg>
+          </sc-if>
+          <sc-if value="{{net.offline}}" hint-placeholder-val="{{ false }}">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.8a15 15 0 0 1 20 0" opacity="0.35"></path><path d="M5 12.6a10 10 0 0 1 14 0" opacity="0.35"></path><path d="M8.5 16.4a5 5 0 0 1 7 0" opacity="0.35"></path><path d="M3 3l18 18"></path></svg>
+          </sc-if>
+          <sc-if value="{{net.error}}" hint-placeholder-val="{{ false }}">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.8a15 15 0 0 1 20 0" opacity="0.35"></path><path d="M5 12.6a10 10 0 0 1 14 0" opacity="0.35"></path><path d="M8.5 16.4a5 5 0 0 1 7 0" opacity="0.35"></path><circle cx="18.5" cy="18.5" r="4.5" fill="#E8A04B" stroke="none"></circle><path d="M18.5 16.3v2.6" stroke="#0E0F11" stroke-width="1.6"></path><circle cx="18.5" cy="20.9" r="0.7" fill="#0E0F11" stroke="none"></circle></svg>
+          </sc-if>
+        </button>
+        <sc-if value="{{hv.net}}" hint-placeholder-val="{{ false }}">
+          <div style="{{labelStyle}}">{{lbl.net}}</div>
+        </sc-if>
+      </div>
+
+      <div style="position: relative; display: flex; justify-content: center">
+        <button aria-label="{{notifAria}}" onClick="{{openNotif}}" onMouseEnter="{{hIn.notif}}" onMouseLeave="{{hOut}}" onFocus="{{hIn.notif}}" onBlur="{{hOut}}" style="{{btn.notif}}">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4s2-1.5 2-6.5"></path><path d="M10 19.5a2.2 2.2 0 0 0 4 0"></path></svg>
+        </button>
+        <sc-if value="{{hasNotif}}" hint-placeholder-val="{{ true }}">
+          <span aria-hidden="true" style="position: absolute; top: -4px; right: -4px; min-width: 26px; height: 26px; box-sizing: border-box; padding: 0 7px; border-radius: 13px; background: #F4F2EE; color: #0E0F11; border: 2px solid #0E0F11; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; pointer-events: none">{{notifCount}}</span>
+        </sc-if>
+        <sc-if value="{{hv.notif}}" hint-placeholder-val="{{ false }}">
+          <div style="{{labelStyle}}">{{lbl.notif}}</div>
+        </sc-if>
+      </div>
+
+      <div style="position: relative; display: flex; justify-content: center">
+        <button aria-label="Hình nền" onClick="{{openWall}}" onMouseEnter="{{hIn.wall}}" onMouseLeave="{{hOut}}" onFocus="{{hIn.wall}}" onBlur="{{hOut}}" style="{{btn.wall}}">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2"></rect><path d="M3 16l5-5 4 4 3-3 6 6"></path><circle cx="16" cy="9" r="1.6"></circle></svg>
+        </button>
+        <sc-if value="{{hv.wall}}" hint-placeholder-val="{{ false }}">
+          <div style="{{labelStyle}}">Hình nền</div>
+        </sc-if>
+      </div>
+
+      <div style="position: relative; display: flex; justify-content: center">
+        <button aria-label="Cài đặt" onMouseEnter="{{hIn.set}}" onMouseLeave="{{hOut}}" onFocus="{{hIn.set}}" onBlur="{{hOut}}" style="{{btn.set}}">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 2.5v3"></path><path d="M12 18.5v3"></path><path d="M2.5 12h3"></path><path d="M18.5 12h3"></path><path d="M5.3 5.3l2.1 2.1"></path><path d="M16.6 16.6l2.1 2.1"></path><path d="M5.3 18.7l2.1-2.1"></path><path d="M16.6 7.4l2.1-2.1"></path></svg>
+        </button>
+        <sc-if value="{{hv.set}}" hint-placeholder-val="{{ false }}">
+          <div style="{{labelStyle}}">Cài đặt</div>
+        </sc-if>
+      </div>
+
+
+    </div>
+  </header>
+
+  <sc-if value="{{arrangingNow}}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position: absolute; left: 50%; bottom: 56px; transform: translateX(-50%); z-index: 4; display: flex; gap: 32px; align-items: center; white-space: nowrap; padding: 16px 32px; border-radius: 40px; background: #1F2025; border: 1px solid #2E3035; font-size: 22px; color: #F4F2EE; box-shadow: 0 16px 40px rgba(0,0,0,0.5); animation: tvPop 160ms ease-out">
+      <span>Đang sắp xếp “{{arrangingLabel}}”</span>
+      <span style="color: #9A9892">◀ ▶  Đổi vị trí</span>
+      <span style="color: #9A9892">OK / Back  Xong</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{searchOpen}}" hint-placeholder-val="{{ false }}">
+    <div role="dialog" aria-label="Tìm kiếm ứng dụng" onKeyDown="{{searchKey}}" style="position: absolute; inset: 0; z-index: 7; box-sizing: border-box; padding: 88px 120px 0; background: {{bg}}; display: flex; flex-direction: column; gap: 40px; animation: tvPop 160ms ease-out">
+      <div style="display: flex; align-items: center; gap: 20px">
+        <div style="position: relative; flex: none; display: flex; justify-content: center">
+          <button aria-label="Tìm bằng giọng nói" onClick="{{openVoice}}" onMouseEnter="{{hIn.mic}}" onMouseLeave="{{hOut}}" onFocus="{{hIn.mic}}" onBlur="{{hOut}}" style="{{btn.mic}}">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0"></path><path d="M12 17.5V21"></path></svg>
+          </button>
+          <sc-if value="{{hv.mic}}" hint-placeholder-val="{{ false }}">
+            <div style="{{labelStyleLeft}}">Tìm bằng giọng nói</div>
+          </sc-if>
+        </div>
+        <label for="tv-search" style="flex: 1; display: flex; align-items: center; gap: 16px; height: 64px; box-sizing: border-box; padding: 0 28px; border-radius: 32px; background: #1F2025; border: 1.5px solid #F4F2EE">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9A9892" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.2-4.2"></path></svg>
+          <input id="tv-search" data-search-input="1" type="text" autocomplete="off" value="{{q}}" onChange="{{onQ}}" placeholder="Tìm ứng dụng" style="flex: 1; min-width: 0; height: 100%; padding: 0; border: none; outline: none; background: transparent; color: #F4F2EE; font-family: inherit; font-size: 28px; font-weight: 400">
+        </label>
+        <div style="position: relative; flex: none; display: flex; justify-content: center">
+          <button aria-label="Đóng" onClick="{{closeSearch}}" onMouseEnter="{{hIn.close}}" onMouseLeave="{{hOut}}" onFocus="{{hIn.close}}" onBlur="{{hOut}}" style="{{btn.close}}">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>
+          </button>
+          <sc-if value="{{hv.close}}" hint-placeholder-val="{{ false }}">
+            <div style="{{labelStyle}}">Đóng</div>
+          </sc-if>
+        </div>
+      </div>
+      <div style="font-size: 26px; font-weight: 500; color: #9A9892">{{resultTitle}}</div>
+      <sc-if value="{{noResults}}" hint-placeholder-val="{{ false }}">
+        <div style="font-size: 30px; color: #9A9892">Không tìm thấy ứng dụng nào cho “{{q}}”</div>
+      </sc-if>
+      <div class="tv-noscroll" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 40px 32px; padding: 8px 0 88px 8px; margin: -8px -120px 0 -8px">
+        <sc-for list="{{results}}" as="r" hint-placeholder-count="10">
+          <button class="tv-res" aria-label="{{r.label}}" onClick="{{r.open}}" style="flex: none; display: flex; flex-direction: column; gap: 16px; width: 320px; padding: 0; border: none; background: transparent; color: #E8E6E1; font-family: inherit; cursor: pointer; text-align: left; outline: none">
+            <span class="tv-res-tile" style="{{r.tileStyle}}">
+              <span aria-hidden="true" style="font-size: 24px; font-weight: 600; color: rgba(255,255,255,0.55); letter-spacing: 2px">BANNER 16:9</span>
+            </span>
+            <span style="display: block; width: 320px; overflow: hidden; white-space: nowrap; font-size: 22px; font-weight: 500; -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 40px), transparent 100%); mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 40px), transparent 100%)">{{r.label}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{toast}}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position: absolute; left: 50%; bottom: 56px; transform: translateX(-50%); z-index: 4; white-space: nowrap; padding: 16px 32px; border-radius: 40px; background: #1F2025; border: 1px solid #2E3035; color: #F4F2EE; font-size: 22px; box-shadow: 0 16px 40px rgba(0,0,0,0.5); animation: tvPop 160ms ease-out">{{toast}}</div>
+  </sc-if>
+
+  <sc-if value="{{launching}}" hint-placeholder-val="{{ false }}">
+    <button data-launch="1" aria-label="{{launchAria}}" onClick="{{closeLaunch}}" onKeyDown="{{launchKey}}" style="{{launchStyle}}">
+      <span style="font-size: 56px; font-weight: 600; color: rgba(255,255,255,0.9); max-width: 1400px; text-align: center">{{launchLabel}}</span>
+      <span style="position: absolute; left: 50%; bottom: 56px; transform: translateX(-50%); white-space: nowrap; padding: 14px 28px; border-radius: 40px; background: rgba(0,0,0,0.35); color: rgba(255,255,255,0.85); font-size: 20px">Giả lập app đang chạy · Back để về màn hình chính</span>
+    </button>
+  </sc-if>
+
+  <sc-if value="{{voiceOpen}}" hint-placeholder-val="{{ false }}">
+    <div role="dialog" aria-label="Giả lập giao diện nhận diện giọng nói của hệ thống" onKeyDown="{{voiceKey}}" style="position: absolute; inset: 0; z-index: 9; display: flex; align-items: center; justify-content: center; background: rgba(5,6,8,0.72); animation: tvPop 160ms ease-out">
+      <div style="width: 760px; box-sizing: border-box; padding: 48px; border-radius: 28px; border: 2px dashed #5A5B60; background: #17181C; display: flex; flex-direction: column; align-items: center; gap: 28px; text-align: center">
+        <div style="font-size: 18px; letter-spacing: 3px; text-transform: uppercase; color: #8A8882">Giữ chỗ · giao diện của hệ thống</div>
+        <div style="width: 112px; height: 112px; border-radius: 50%; border: 2px solid #5A5B60; display: flex; align-items: center; justify-content: center; color: #C9C7C1">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0"></path><path d="M12 17.5V21"></path></svg>
+        </div>
+        <div style="font-size: 34px; font-weight: 500">Nói tên ứng dụng</div>
+        <div style="font-size: 20px; color: #8A8882; line-height: 1.5">App thật gọi RecognizerIntent.ACTION_RECOGNIZE_SPEECH. Giao diện thật do app nhận diện trên máy quyết định; nói xong, chữ được trả về ô tìm kiếm của launcher.</div>
+        <div style="display: flex; gap: 16px">
+          <button data-voice-first="1" class="tv-ghost" onClick="{{voiceSample}}" style="height: 56px; padding: 0 28px; border-radius: 28px; border: 1.5px solid #3A3B3F; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 22px; font-weight: 500; cursor: pointer">Giả lập: nói “phim”</button>
+          <button class="tv-ghost" onClick="{{voiceCancel}}" style="height: 56px; padding: 0 28px; border-radius: 28px; border: 1.5px solid #3A3B3F; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 22px; font-weight: 500; cursor: pointer">Hủy</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{menuOpen}}" hint-placeholder-val="{{ false }}">
+    <button aria-label="Đóng menu" tabindex="-1" onClick="{{closeMenu}}" style="position: absolute; inset: 0; z-index: 5; border: none; padding: 0; margin: 0; background: rgba(5,6,8,0.35); cursor: default"></button>
+    <div data-menu="1" role="menu" aria-label="{{menuTitle}}" onKeyDown="{{menuKey}}" style="{{menuStyle}}">
+      <div style="padding: 12px 20px 14px; font-size: 20px; color: #8A8882; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{menuTitle}}</div>
+      <sc-for list="{{menuItems}}" as="mi" hint-placeholder-count="4">
+        <button class="tv-menu-item" role="menuitem" onClick="{{mi.run}}" style="display: flex; align-items: center; gap: 18px; width: 100%; box-sizing: border-box; padding: 16px 20px; border: none; border-radius: 12px; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 24px; font-weight: 500; text-align: left; cursor: pointer">
+          <sc-if value="{{mi.isOpen}}" hint-placeholder-val="{{ false }}">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"></path></svg>
+          </sc-if>
+          <sc-if value="{{mi.isAdd}}" hint-placeholder-val="{{ false }}">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path></svg>
+          </sc-if>
+          <sc-if value="{{mi.isRemove}}" hint-placeholder-val="{{ false }}">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path><path d="M3 3l18 18"></path></svg>
+          </sc-if>
+          <sc-if value="{{mi.isArrange}}" hint-placeholder-val="{{ false }}">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8l-4 4 4 4"></path><path d="M17 8l4 4-4 4"></path><path d="M3 12h18"></path></svg>
+          </sc-if>
+          <sc-if value="{{mi.isInfo}}" hint-placeholder-val="{{ false }}">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><circle cx="12" cy="7.8" r="0.6" fill="currentColor"></circle></svg>
+          </sc-if>
+          <span>{{mi.label}}</span>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{panelOpen}}" hint-placeholder-val="{{ false }}">
+    <button aria-label="Đóng bảng" onClick="{{closePanel}}" style="position: absolute; inset: 0; z-index: 7; border: none; padding: 0; margin: 0; background: rgba(5,6,8,0.6); cursor: default"></button>
+    <aside style="position: absolute; top: 0; right: 0; bottom: 0; z-index: 8; width: 640px; box-sizing: border-box; padding: 72px 56px; background: #17181C; border-left: 1px solid #26272B; display: flex; flex-direction: column; gap: 36px; animation: tvPanelIn 200ms ease-out; overflow-y: auto">
+
+      <sc-if value="{{panel.wall}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="font-size: 20px; letter-spacing: 3px; text-transform: uppercase; color: #8A8882">Cá nhân hóa</div>
+          <h2 style="margin: 0; font-size: 44px; font-weight: 500">Hình nền</h2>
+          <div style="font-size: 20px; color: #9A9892">Màu nền được tính tự động từ ảnh đã chọn.</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px">
+          <button aria-label="Hoàng hôn" aria-pressed="{{wsel.dusk}}" onClick="{{pickWall.dusk}}" style="display: flex; flex-direction: column; gap: 12px; padding: 0; border: none; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 20px; text-align: left; cursor: pointer; outline: none">
+            <span style="{{thumb.dusk}}"><img src="/_blob/34df44efae4e572f60f646dec24bd47d" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block"></span>
+            <span>Hoàng hôn</span>
+          </button>
+          <button aria-label="Xanh ngọc" aria-pressed="{{wsel.teal}}" onClick="{{pickWall.teal}}" style="display: flex; flex-direction: column; gap: 12px; padding: 0; border: none; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 20px; text-align: left; cursor: pointer; outline: none">
+            <span style="{{thumb.teal}}"><img src="/_blob/30cf235ff73e71c5e902b0743f190abb" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block"></span>
+            <span>Xanh ngọc</span>
+          </button>
+          <button aria-label="Sa mạc" aria-pressed="{{wsel.desert}}" onClick="{{pickWall.desert}}" style="display: flex; flex-direction: column; gap: 12px; padding: 0; border: none; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 20px; text-align: left; cursor: pointer; outline: none">
+            <span style="{{thumb.desert}}"><img src="/_blob/7e717e0069232baebe851cd8157a394d" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block"></span>
+            <span>Sa mạc</span>
+          </button>
+          <button aria-label="Không dùng ảnh" aria-pressed="{{wsel.none}}" onClick="{{pickWall.none}}" style="display: flex; flex-direction: column; gap: 12px; padding: 0; border: none; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 20px; text-align: left; cursor: pointer; outline: none">
+            <span style="{{thumb.none}}"></span>
+            <span>Không dùng ảnh</span>
+          </button>
+          <sc-if value="{{hasCustom}}" hint-placeholder-val="{{ false }}">
+            <button aria-label="Ảnh của bạn" aria-pressed="{{wsel.custom}}" onClick="{{pickWall.custom}}" style="display: flex; flex-direction: column; gap: 12px; padding: 0; border: none; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 20px; text-align: left; cursor: pointer; outline: none">
+              <span style="{{thumb.custom}}">
+                <sc-if value="{{customIs.c32}}" hint-placeholder-val="{{ true }}"><img src="/_blob/a3f190017bc979c7d34d3971f6b72243" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block"></sc-if>
+                <sc-if value="{{customIs.c23}}" hint-placeholder-val="{{ false }}"><img src="/_blob/4839892b0a0e32667ce31d5434b67e23" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block"></sc-if>
+              </span>
+              <span>Ảnh của bạn</span>
+            </button>
+          </sc-if>
+          <button class="tv-ghost" onClick="{{pickFromStorage}}" style="{{pickBtnStyle}}">{{pickLabel}}</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{panel.notif}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px">
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <div style="font-size: 20px; letter-spacing: 3px; text-transform: uppercase; color: #8A8882">Thông báo</div>
+            <h2 style="margin: 0; font-size: 44px; font-weight: 500">{{notifTitle}}</h2>
+          </div>
+          <sc-if value="{{hasNotif}}" hint-placeholder-val="{{ true }}">
+            <button class="tv-ghost" onClick="{{clearNotifs}}" style="flex: none; height: 52px; padding: 0 24px; border-radius: 26px; border: 1.5px solid #3A3B3F; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 20px; font-weight: 500; cursor: pointer">Xóa tất cả</button>
+          </sc-if>
+        </div>
+        <sc-if value="{{noNotif}}" hint-placeholder-val="{{ false }}">
+          <div style="font-size: 24px; color: #8A8882">Bạn đã xem hết thông báo.</div>
+        </sc-if>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <sc-for list="{{notifs}}" as="n" hint-placeholder-count="3">
+            <button class="tv-row" onClick="{{n.dismiss}}" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 20px 24px; border-radius: 16px; border: none; background: #1F2025; color: inherit; font-family: inherit; cursor: pointer; text-align: left">
+              <span style="display: flex; gap: 12px; font-size: 18px; color: #8A8882"><span>{{n.app}}</span><span>·</span><span>{{n.time}}</span></span>
+              <span style="font-size: 26px; font-weight: 500">{{n.title}}</span>
+              <span style="font-size: 20px; color: #9A9892">{{n.body}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{panel.info}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="font-size: 20px; letter-spacing: 3px; text-transform: uppercase; color: #8A8882">Cài đặt › Ứng dụng</div>
+          <h2 style="margin: 0; font-size: 44px; font-weight: 500; line-height: 1.15">{{info.label}}</h2>
+          <div style="font-size: 22px; color: #9A9892">[tên gói] · Phiên bản [x.y.z]</div>
+        </div>
+        <div style="{{info.bannerStyle}}">
+          <span aria-hidden="true" style="font-size: 22px; font-weight: 600; color: rgba(255,255,255,0.55); letter-spacing: 2px">BANNER 16:9</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <button class="tv-row" style="display: flex; align-items: center; padding: 20px 24px; border-radius: 16px; border: none; background: #1F2025; color: inherit; font-family: inherit; font-size: 26px; font-weight: 500; cursor: pointer">Mở</button>
+          <button class="tv-row" style="display: flex; align-items: center; padding: 20px 24px; border-radius: 16px; border: none; background: transparent; color: inherit; font-family: inherit; font-size: 26px; font-weight: 500; cursor: pointer">Buộc dừng</button>
+          <button class="tv-row" style="display: flex; align-items: center; padding: 20px 24px; border-radius: 16px; border: none; background: transparent; color: inherit; font-family: inherit; font-size: 26px; font-weight: 500; cursor: pointer">Gỡ cài đặt</button>
+          <button class="tv-row" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-radius: 16px; border: none; background: transparent; color: inherit; font-family: inherit; cursor: pointer; text-align: left">
+            <span style="font-size: 26px; font-weight: 500">Bộ nhớ và bộ nhớ đệm</span>
+            <span style="font-size: 20px; color: #8A8882">[dung lượng]</span>
+          </button>
+          <button class="tv-row" style="display: flex; align-items: center; padding: 20px 24px; border-radius: 16px; border: none; background: transparent; color: inherit; font-family: inherit; font-size: 26px; font-weight: 500; cursor: pointer">Quyền</button>
+          <button class="tv-row" style="display: flex; align-items: center; padding: 20px 24px; border-radius: 16px; border: none; background: transparent; color: inherit; font-family: inherit; font-size: 26px; font-weight: 500; cursor: pointer">Thông báo</button>
+        </div>
+        <div style="font-size: 20px; color: #8A8882">Danh mục: {{info.cat}}</div>
+      </sc-if>
+
+      <sc-if value="{{panel.input}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="font-size: 20px; letter-spacing: 3px; text-transform: uppercase; color: #8A8882">Nguồn vào</div>
+          <h2 style="margin: 0; font-size: 44px; font-weight: 500">Chọn đầu vào</h2>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <sc-for list="{{inputs}}" as="it" hint-placeholder-count="5">
+            <button class="tv-row" onClick="{{it.pick}}" style="{{it.rowStyle}}">
+              <span style="display: flex; flex-direction: column; gap: 4px; text-align: left">
+                <span style="font-size: 28px; font-weight: 500">{{it.name}}</span>
+                <span style="font-size: 20px; color: #8A8882">{{it.sub}}</span>
+              </span>
+              <sc-if value="{{it.active}}" hint-placeholder-val="{{ false }}">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F4F2EE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Đang dùng"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+              </sc-if>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{panel.net}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="font-size: 20px; letter-spacing: 3px; text-transform: uppercase; color: #8A8882">Mạng và Internet</div>
+          <h2 style="margin: 0; font-size: 44px; font-weight: 500">{{netTitle}}</h2>
+          <div style="{{netSubStyle}}">{{netSub}}</div>
+        </div>
+        <sc-if value="{{net.error}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; gap: 16px">
+            <button class="tv-ghost" style="height: 56px; padding: 0 28px; border-radius: 28px; border: 1.5px solid #3A3B3F; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 22px; font-weight: 500; cursor: pointer">Thử kết nối lại</button>
+            <button class="tv-ghost" style="height: 56px; padding: 0 28px; border-radius: 28px; border: 1.5px solid #3A3B3F; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 22px; font-weight: 500; cursor: pointer">Chẩn đoán mạng</button>
+          </div>
+        </sc-if>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-radius: 16px; background: #1F2025">
+            <span style="display: flex; flex-direction: column; gap: 4px">
+              <span style="font-size: 26px; font-weight: 500">Ethernet</span>
+              <span style="font-size: 20px; color: #8A8882">{{ethSub}}</span>
+            </span>
+          </div>
+          <button class="tv-row" role="switch" aria-checked="{{wifiOnStr}}" onClick="{{toggleWifi}}" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-radius: 16px; border: none; background: #1F2025; color: inherit; font-family: inherit; cursor: pointer">
+            <span style="font-size: 26px; font-weight: 500">Wi‑Fi</span>
+            <span style="{{switchTrack}}"><span style="{{switchKnob}}"></span></span>
+          </button>
+        </div>
+        <sc-if value="{{wifiOn}}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <div style="font-size: 20px; color: #8A8882; padding: 0 8px 8px">Mạng khả dụng</div>
+            <sc-for list="{{wifiList}}" as="w" hint-placeholder-count="4">
+              <button class="tv-row" style="display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-radius: 16px; border: none; background: transparent; color: inherit; font-family: inherit; cursor: pointer; text-align: left">
+                <span style="display: flex; flex-direction: column; gap: 4px">
+                  <span style="font-size: 26px; font-weight: 500">{{w.name}}</span>
+                  <span style="{{w.subStyle}}">{{w.sub}}</span>
+                </span>
+                <span style="font-size: 20px; color: #8A8882">{{w.signal}}</span>
+              </button>
+            </sc-for>
+            <button class="tv-row" style="display: flex; align-items: center; padding: 18px 24px; border-radius: 16px; border: none; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 24px; cursor: pointer">+  Thêm mạng</button>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{panel.bt}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="font-size: 20px; letter-spacing: 3px; text-transform: uppercase; color: #8A8882">Bluetooth</div>
+          <h2 style="margin: 0; font-size: 44px; font-weight: 500">Điều khiển và phụ kiện</h2>
+        </div>
+        <button class="tv-ghost" style="align-self: flex-start; height: 56px; padding: 0 28px; border-radius: 28px; border: 1.5px solid #3A3B3F; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 22px; font-weight: 500; cursor: pointer">+  Ghép nối phụ kiện</button>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="font-size: 20px; color: #8A8882; padding: 0 8px 8px">Đã kết nối</div>
+          <sc-for list="{{btConnected}}" as="d" hint-placeholder-count="2">
+            <button class="tv-row" style="display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-radius: 16px; border: none; background: #1F2025; color: inherit; font-family: inherit; cursor: pointer; text-align: left">
+              <span style="display: flex; flex-direction: column; gap: 4px">
+                <span style="font-size: 26px; font-weight: 500">{{d.name}}</span>
+                <span style="font-size: 20px; color: #8A8882">{{d.kind}}</span>
+              </span>
+              <span style="font-size: 20px; color: #8A8882">{{d.battery}}</span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="font-size: 20px; color: #8A8882; padding: 0 8px 8px">Đã ghép nối trước đây</div>
+          <sc-for list="{{btPaired}}" as="d" hint-placeholder-count="2">
+            <button class="tv-row" style="display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-radius: 16px; border: none; background: transparent; color: inherit; font-family: inherit; cursor: pointer; text-align: left">
+              <span style="display: flex; flex-direction: column; gap: 4px">
+                <span style="font-size: 26px; font-weight: 500">{{d.name}}</span>
+                <span style="font-size: 20px; color: #8A8882">Chưa kết nối</span>
+              </span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+    </aside>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"networkState":{"editor":"enum","default":"wifi","options":["wifi","wifi-weak","ethernet","offline","error"],"section":"Trạng thái"},"btScenario":{"editor":"enum","default":"one","options":["remote-only","one","many"],"section":"Trạng thái"},"longPressMs":{"editor":"range","default":550,"min":300,"max":1200,"step":50,"unit":"ms"},"weather":{"editor":"enum","default":"fresh","options":["fresh","stale","off"],"section":"Trạng thái"},"wallpaper":{"editor":"enum","default":"dusk","options":["dusk","teal","desert","none"]},"marqueeSpeed":{"editor":"range","default":60,"min":20,"max":160,"step":10,"unit":"px/s"},"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      focus: 'movies', over: {}, hover: null, panel: null, input: 0, wifiOn: true,
+      favs: ['tv', 'movies', 'music', 'photos', 'browser', 'kids', 'files', 'news'],
+      menu: null, arranging: null, infoApp: null, toast: null,
+      search: false, q: '', voice: false, hp: 0, clockEm: 2.7, launching: null, wall: null, custom: null,
+      notifs: [
+        { id: 'n1', app: 'Hệ thống', time: '10 phút trước', title: 'Có bản cập nhật phần mềm', body: 'Cài đặt khi TV không sử dụng' },
+        { id: 'n2', app: 'Phim', time: '1 giờ trước', title: 'Đã có tập mới', body: '[Tên phim] · Tập [số]' },
+        { id: 'n3', app: 'Trình quản lý tệp và bộ nhớ', time: 'Hôm qua', title: 'Đã kết nối ổ USB', body: 'Chọn để xem tệp' }
+      ]
+    };
+    this.root = null;
+    this.pressTimer = null;
+    this.longFired = false;
+    this.pendingFocus = null;
+    var self = this;
+    this.rootRef = function (el) { self.root = el; };
+  }
+  componentDidMount() {
+    var self = this;
+    this.measure();
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () { self.measure(); });
+    }
+    this.t = setTimeout(function () { self.measure(); }, 600);
+  }
+  componentWillUnmount() { clearTimeout(this.t); clearTimeout(this.pressTimer); clearTimeout(this.toastTimer); }
+  componentDidUpdate(prevProps, prevState) {
+    var self = this;
+    if (this.state.launching && !prevState.launching && this.root) {
+      var lb = this.root.querySelector('[data-launch]');
+      if (lb) lb.focus({ preventScroll: true });
+    }
+    if (this.state.voice && !prevState.voice && this.root) {
+      var vb = this.root.querySelector('[data-voice-first]');
+      if (vb) vb.focus({ preventScroll: true });
+    }
+    if (!this.state.voice && prevState.voice && this.state.search && this.root) {
+      var si = this.root.querySelector('[data-search-input]');
+      if (si) si.focus({ preventScroll: true });
+    }
+    if (this.state.search && !prevState.search && this.root) {
+      var inp = this.root.querySelector('[data-search-input]');
+      if (inp) inp.focus({ preventScroll: true });
+    }
+    if (this.state.menu && !prevState.menu && this.root) {
+      var first = this.root.querySelector('[data-menu] button');
+      if (first) first.focus({ preventScroll: true });
+    }
+    if (this.pendingFocus && this.root) {
+      var id = this.pendingFocus;
+      this.pendingFocus = null;
+      var el = this.root.querySelector('[data-key="' + id + '"]');
+      if (el) {
+        el.focus({ preventScroll: true });
+        setTimeout(function () { self.bringIntoView(el); }, 0);
+      }
+    }
+    if (prevState.favs !== this.state.favs) this.measure();
+  }
+  measure() {
+    if (!this.root) return;
+    var clk = this.root.querySelector('[data-clock]');
+    if (clk) {
+      var cfs = parseFloat(window.getComputedStyle(clk).fontSize) || 0;
+      if (cfs > 0) {
+        var em = Math.round((clk.offsetWidth / cfs) * 100) / 100;
+        if (em > 0 && Math.abs(em - this.state.clockEm) > 0.02) this.setState({ clockEm: em });
+      }
+    }
+    var outers = this.root.querySelectorAll('[data-lbl-outer]');
+    var over = {};
+    var changed = false;
+    for (var i = 0; i < outers.length; i++) {
+      var key = outers[i].getAttribute('data-lbl-outer');
+      var inner = outers[i].querySelector('[data-lbl-inner]');
+      if (!inner) continue;
+      var w = inner.scrollWidth;
+      over[key] = w > 352 ? w : 0;
+      if ((this.state.over[key] || 0) !== over[key]) changed = true;
+    }
+    if (changed) this.setState({ over: over });
+  }
+  // Đưa hàng chứa tile lên vị trí hàng đầu tiên, và cuộn ngang để tile nằm trong khung
+  bringIntoView(tile) {
+    if (!tile || !tile.closest) return;
+    var row = tile.closest('[data-row]');
+    var vp = tile.closest('[data-vp]');
+    var strip = tile.closest('[data-strip]');
+    var wrap = tile.parentElement;
+    if (row && vp) vp.scrollTop = Math.max(0, row.offsetTop - 370);
+    if (strip && wrap) {
+      var pad = 120;
+      var left = wrap.offsetLeft, right = left + 352;
+      if (left - pad < strip.scrollLeft) strip.scrollLeft = left - pad;
+      else if (right + pad > strip.scrollLeft + strip.clientWidth) strip.scrollLeft = right + pad - strip.clientWidth;
+    }
+  }
+  launch(label, fill, id) {
+    this.launchFrom = id;
+    this.setState({ launching: { label: label, fill: fill } });
+  }
+  closeLaunch() {
+    if (this.launchFrom) this.pendingFocus = this.launchFrom;
+    this.launchFrom = null;
+    this.setState({ launching: null });
+  }
+  showToast(text) {
+    var self = this;
+    clearTimeout(this.toastTimer);
+    this.setState({ toast: text });
+    this.toastTimer = setTimeout(function () { self.setState({ toast: null }); }, 1800);
+  }
+  openMenu(id, el) {
+    if (!this.root || !el) return;
+    var rr = this.root.getBoundingClientRect();
+    var scale = rr.width / 1920 || 1;
+    var tr = el.getBoundingClientRect();
+    var tLeft = (tr.left - rr.left) / scale;
+    var tTop = (tr.top - rr.top) / scale;
+    var tBottom = tTop + 198;
+    var isFav = this.state.favs.indexOf(id) >= 0;
+    var h = 64 + (isFav ? 4 : 3) * 66;
+    var left = Math.min(Math.max(tLeft, 40), 1920 - 420);
+    var top = tBottom + 14;
+    if (top + h > 1040) top = Math.max(40, tTop - h - 14);
+    this.setState({ menu: { id: id, left: left, top: top }, focus: id });
+  }
+  closeMenu(refocus) {
+    var id = this.state.menu && this.state.menu.id;
+    if (refocus && id) this.pendingFocus = id;
+    this.setState({ menu: null });
+  }
+  addFav(id) {
+    this.pendingFocus = id;
+    this.setState({ favs: this.state.favs.concat([id]), menu: null, focus: id });
+    this.showToast('Đã thêm vào Ưa thích');
+  }
+  removeFav(id) {
+    this.pendingFocus = id;
+    this.setState({ favs: this.state.favs.filter(function (x) { return x !== id; }), menu: null, focus: id });
+    this.showToast('Đã xóa khỏi Ưa thích');
+  }
+  startArrange(id) {
+    this.pendingFocus = id;
+    this.setState({ arranging: id, menu: null, focus: id });
+  }
+  finishArrange() {
+    var id = this.state.arranging;
+    if (!id) return;
+    this.pendingFocus = id;
+    this.setState({ arranging: null });
+  }
+  move(id, dir) {
+    var favs = this.state.favs.slice();
+    var i = favs.indexOf(id), j = i + dir;
+    if (i < 0 || j < 0 || j >= favs.length) return;
+    var tmp = favs[i]; favs[i] = favs[j]; favs[j] = tmp;
+    this.pendingFocus = id;
+    this.setState({ favs: favs });
+  }
+  renderVals() {
+    var self = this;
+    var st = this.state;
+
+    // ---- Network ----
+    var ns = this.props.networkState ?? 'wifi';
+    var ssid = 'Nha_Minh_5G';
+    var lanName = 'LAN_VanPhong';
+    var net = { wifi: ns === 'wifi', weak: ns === 'wifi-weak', ethernet: ns === 'ethernet', offline: ns === 'offline', error: ns === 'error' };
+    var netLabel = {
+      'wifi': ssid,
+      'wifi-weak': ssid + ' · Tín hiệu yếu',
+      'ethernet': lanName,
+      'offline': 'Không có kết nối mạng',
+      'error': ssid + ' · Không có Internet'
+    }[ns];
+    var netTitle = {
+      'wifi': 'Đã kết nối Wi‑Fi',
+      'wifi-weak': 'Wi‑Fi tín hiệu yếu',
+      'ethernet': 'Đã kết nối qua dây',
+      'offline': 'Không có kết nối',
+      'error': 'Không có Internet'
+    }[ns];
+    var netSub = {
+      'wifi': ssid + ' · Tín hiệu mạnh',
+      'wifi-weak': ssid + ' · Có thể bị giật khi xem video',
+      'ethernet': 'Ethernet · ' + lanName,
+      'offline': 'Cắm dây mạng hoặc chọn một mạng Wi‑Fi bên dưới',
+      'error': 'Đã kết nối ' + ssid + ' nhưng không truy cập được Internet'
+    }[ns];
+    var wifiConnectedName = (ns === 'wifi' || ns === 'wifi-weak' || ns === 'error') ? ssid : null;
+    var wifiList = [
+      { name: ssid, signal: ns === 'wifi-weak' ? 'Yếu' : 'Mạnh' },
+      { name: 'Nha_Minh_2.4G', signal: 'Mạnh' },
+      { name: 'Tang3_Guest', signal: 'Trung bình', open: true },
+      { name: 'Phong_Hop_B', signal: 'Yếu' }
+    ].map(function (w) {
+      var connected = w.name === wifiConnectedName;
+      var sub = connected ? (ns === 'error' ? 'Đã kết nối · Không có Internet' : 'Đã kết nối') : (w.open ? 'Mạng mở' : 'Bảo mật');
+      return {
+        name: w.name, signal: w.signal, sub: sub,
+        subStyle: 'font-size: 20px; color: ' + (connected ? (ns === 'error' ? '#E8A04B' : '#9FD3B5') : '#8A8882') + ';'
+      };
+    });
+
+    // ---- Bluetooth ----
+    var sc = this.props.btScenario ?? 'one';
+    var remote = { name: 'Điều khiển TV', kind: 'Điều khiển', battery: 'Pin 80%', isRemote: true };
+    var extra = {
+      'remote-only': [],
+      'one': [{ name: 'Loa soundbar phòng khách', kind: 'Âm thanh', battery: '' }],
+      'many': [
+        { name: 'Loa soundbar phòng khách', kind: 'Âm thanh', battery: '' },
+        { name: 'Tay cầm chơi game', kind: 'Tay cầm', battery: 'Pin 55%' },
+        { name: 'Tai nghe không dây', kind: 'Âm thanh', battery: 'Pin 90%' }
+      ]
+    }[sc];
+    var btConnected = [remote].concat(extra);
+    var btPaired = [{ name: 'Bàn phím không dây' }, { name: 'Tai nghe thể thao' }];
+    var nonRemote = btConnected.filter(function (d) { return !d.isRemote; });
+    var btLabel = nonRemote.length === 0 ? 'Bluetooth' : (nonRemote.length === 1 ? nonRemote[0].name : nonRemote.length + ' thiết bị đã kết nối');
+
+    // ---- Input ----
+    var inputDefs = [
+      { name: 'HDMI 1', sub: 'Đầu thu truyền hình' },
+      { name: 'HDMI 2', sub: 'Máy chơi game' },
+      { name: 'HDMI 3', sub: 'Không có tín hiệu' },
+      { name: 'AV', sub: 'Không có tín hiệu' },
+      { name: 'Ăng-ten', sub: 'Truyền hình kỹ thuật số' }
+    ];
+    var inputs = inputDefs.map(function (d, idx) {
+      var active = idx === st.input;
+      return {
+        name: d.name, sub: d.sub, active: active,
+        rowStyle: 'display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-radius: 16px; border: none; color: inherit; font-family: inherit; cursor: pointer; background: ' + (active ? '#24262B' : 'transparent') + ';',
+        pick: function () { self.setState({ input: idx, panel: null }); }
+      };
+    });
+
+    // ---- Wallpaper ----
+    // App thật: lấy hue chủ đạo từ ảnh nền (vd. androidx.palette), giữ hue, hạ độ sáng xuống ~7%
+    // c32 / c23: ảnh mẫu giả lập ảnh người dùng (3:2 và 2:3); màu nền tính từ phần ảnh thực sự hiển thị trong khung
+    var walls = { dusk: '20,12,26', teal: '12,26,26', desert: '26,14,12', none: '14,15,17', c32: '13,26,12', c23: '26,18,12' };
+    var wk = st.wall || (this.props.wallpaper ?? 'dusk');
+    if (wk === 'custom') wk = st.custom || 'dusk';
+    if (!walls[wk]) wk = 'dusk';
+    var tRGB = walls[wk];
+    var tint = 'rgb(' + tRGB + ')';
+    var ta = function (al) { return 'rgba(' + tRGB + ',' + al + ')'; };
+    var eHP = st.hp * st.hp * (3 - 2 * st.hp);
+    var glassBg = ta(0.55);
+    // Dải chuyển màu theo đường cong smoothstep, 13 mốc để không lộ bậc
+    var gEase = function (t) { return t * t * (3 - 2 * t); };
+    var grad = function (dir, p0, p1, a0, a1) {
+      var s = [];
+      for (var i = 0; i <= 12; i++) {
+        var t = i / 12;
+        s.push(ta((a0 + (a1 - a0) * gEase(t)).toFixed(3)) + ' ' + Math.round(p0 + (p1 - p0) * t) + 'px');
+      }
+      return 'linear-gradient(' + dir + ', ' + s.join(', ') + ')';
+    };
+
+    // ---- Top buttons ----
+    var ids = ['search', 'input', 'bt', 'net', 'notif', 'wall', 'set', 'mic', 'close'];
+    var nCount = st.notifs.length;
+    var btn = {}, hv = {}, hIn = {};
+    ids.forEach(function (id) {
+      var on = st.hover === id || st.panel === id;
+      var warn = id === 'net' && (ns === 'offline' || ns === 'error');
+      btn[id] = 'display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; padding: 0; cursor: pointer; font-family: inherit; font-size: 26px; font-weight: 500; outline: none; transition: all 140ms ease; ' +
+        (on ? 'background: #F4F2EE; color: #0E0F11; border: 1.5px solid #F4F2EE; transform: scale(1.08);'
+            : 'background: ' + glassBg + '; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: ' + (warn ? '#E8A04B' : '#C9C7C1') + '; border: 1.5px solid #3A3B3F;');
+      hv[id] = st.hover === id;
+      hIn[id] = function () { if (self.state.hover !== id) self.setState({ hover: id }); };
+    });
+
+    // ---- Apps ----
+    // cat = giá trị android:appCategory mà app khai báo; null = không khai báo → "Khác"
+    var allApps = [
+      { id: 'tv', label: 'Truyền hình', cat: 'video' },
+      { id: 'movies', label: 'Phim', cat: 'video' },
+      { id: 'shorts', label: 'Video ngắn', cat: 'video' },
+      { id: 'sports', label: 'Thể thao trực tiếp', cat: 'video' },
+      { id: 'music', label: 'Âm nhạc và podcast cho cả gia đình', cat: 'audio' },
+      { id: 'radio', label: 'Radio FM', cat: 'audio' },
+      { id: 'karaoke', label: 'Karaoke tại gia', cat: 'audio' },
+      { id: 'kids', label: 'Trò chơi giải trí dành cho thiếu nhi', cat: 'game' },
+      { id: 'chess', label: 'Cờ tướng', cat: 'game' },
+      { id: 'racing', label: 'Đua xe', cat: 'game' },
+      { id: 'photos', label: 'Ảnh', cat: 'image' },
+      { id: 'frame', label: 'Khung ảnh kỹ thuật số', cat: 'image' },
+      { id: 'call', label: 'Gọi video gia đình', cat: 'social' },
+      { id: 'news', label: 'Tin tức 24h', cat: 'news' },
+      { id: 'files', label: 'Trình quản lý tệp và bộ nhớ', cat: 'productivity' },
+      { id: 'calendar', label: 'Lịch gia đình', cat: 'productivity' },
+      { id: 'browser', label: 'Trình duyệt web', cat: null },
+      { id: 'weather', label: 'Thời tiết', cat: null },
+      { id: 'store', label: 'Cửa hàng ứng dụng', cat: null },
+      { id: 'guide', label: 'Hướng dẫn sử dụng TV', cat: null }
+    ];
+    var byId = {};
+    allApps.forEach(function (a) { byId[a.id] = a; });
+    var catMeta = [
+      { key: 'video', title: 'Video và phim', fill: '#2B3A55' },
+      { key: 'audio', title: 'Âm nhạc và âm thanh', fill: '#2F4A3C' },
+      { key: 'game', title: 'Trò chơi', fill: '#45305A' },
+      { key: 'image', title: 'Ảnh', fill: '#54452A' },
+      { key: 'social', title: 'Liên lạc và mạng xã hội', fill: '#5A2E44' },
+      { key: 'news', title: 'Tin tức', fill: '#5A2E2E' },
+      { key: 'productivity', title: 'Công việc và tiện ích', fill: '#2C4752' },
+      { key: 'maps', title: 'Bản đồ', fill: '#2C4A47' },
+      { key: 'accessibility', title: 'Hỗ trợ tiếp cận', fill: '#3F3A52' },
+      { key: null, title: 'Khác', fill: '#3A3B40' }
+    ];
+    var fillOf = {}, catTitle = {};
+    catMeta.forEach(function (c) { fillOf[String(c.key)] = c.fill; catTitle[String(c.key)] = c.title; });
+
+    var favs = st.favs;
+    var favSet = {};
+    favs.forEach(function (id) { favSet[id] = true; });
+    var rowDefs = [{ key: 'fav', title: 'Ưa thích', apps: favs.map(function (id) { return byId[id]; }), isFav: true }];
+    catMeta.forEach(function (c) {
+      var apps = allApps.filter(function (a) { return a.cat === c.key && !favSet[a.id]; });
+      if (apps.length) rowDefs.push({ key: 'cat-' + c.key, title: c.title, apps: apps });
+    });
+
+    var over = st.over;
+    var speed = this.props.marqueeSpeed ?? 60;
+    var lpMs = this.props.longPressMs ?? 550;
+    var fadeEnd = 'linear-gradient(to right, #000 0, #000 calc(100% - 40px), transparent 100%)';
+    var fadeBoth = 'linear-gradient(to right, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%)';
+    var arr = st.arranging;
+
+    var rows = rowDefs.map(function (r) {
+      var focusIdx = -1;
+      var n = r.apps.length;
+      var apps = r.apps.map(function (a, idx) {
+        var id = a.id;
+        var sel = st.focus === id;
+        var isArr = arr === id;
+        if (sel) focusIdx = idx;
+        var w = sel ? 352 : 320;
+        var h = sel ? 198 : 180;
+        var textW = over[id] || 0;
+        var long = textW > 0;
+        var mask = !long ? 'none' : (sel ? fadeBoth : fadeEnd);
+        var dur = long ? Math.max(3, ((textW - 352 + 28) / speed) / 0.76) : 0;
+        var dim = arr && !isArr;
+        return {
+          id: id,
+          label: a.label,
+          aria: isArr ? a.label + ', đang sắp xếp, vị trí ' + (idx + 1) + ' trên ' + n : a.label,
+          arranging: isArr,
+          canLeft: idx > 0,
+          canRight: idx < n - 1,
+          moveLeft: function () { self.move(id, -1); },
+          moveRight: function () { self.move(id, 1); },
+          hover: function () { if (!self.state.arranging && !self.state.menu && self.state.focus !== id) self.setState({ focus: id }); },
+          go: function (e) {
+            var el = e && e.currentTarget;
+            if (self.state.arranging && self.state.arranging !== id) { self.finishArrange(); return; }
+            if (self.state.focus !== id) self.setState({ focus: id });
+            setTimeout(function () { self.bringIntoView(el); }, 0);
+          },
+          click: function (e) {
+            if (self.longFired) { self.longFired = false; return; }
+            if (self.state.arranging) { self.finishArrange(); return; }
+            var el = e && e.currentTarget;
+            if (self.state.focus !== id) self.setState({ focus: id });
+            setTimeout(function () { self.bringIntoView(el); }, 0);
+            self.launch(a.label, fillOf[String(a.cat)], id);
+          },
+          pDown: function (e) {
+            if (self.state.arranging || (e && e.button && e.button !== 0)) return;
+            var el = e && e.currentTarget;
+            self.longFired = false;
+            clearTimeout(self.pressTimer);
+            self.pressTimer = setTimeout(function () { self.longFired = true; self.openMenu(id, el); }, lpMs);
+          },
+          pUp: function () { clearTimeout(self.pressTimer); },
+          ctx: function (e) {
+            if (e && e.preventDefault) e.preventDefault();
+            if (self.state.arranging) return;
+            self.openMenu(id, e && e.currentTarget);
+          },
+          keyDown: function (e) {
+            var k = e.key;
+            if (self.state.arranging === id) {
+              if (k === 'ArrowLeft') { e.preventDefault(); self.move(id, -1); }
+              else if (k === 'ArrowRight') { e.preventDefault(); self.move(id, 1); }
+              else if (k === 'Enter' || k === ' ' || k === 'Escape' || k === 'Backspace' || k === 'GoBack' || k === 'BrowserBack') { e.preventDefault(); self.finishArrange(); }
+              else if (k === 'ArrowUp' || k === 'ArrowDown') { e.preventDefault(); }
+              return;
+            }
+            if (k === 'Enter') {
+              // Nhấn nhanh OK = mở app (xử lý ở keyUp); giữ OK = mở menu
+              e.preventDefault();
+              if (!e.repeat) { self.enterDown = Date.now(); self.enterMenu = false; }
+              else if (!self.enterMenu && self.enterDown && Date.now() - self.enterDown >= lpMs) {
+                self.enterMenu = true;
+                if (!self.state.menu) self.openMenu(id, e.currentTarget);
+              }
+              return;
+            }
+            if (k === 'ContextMenu') {
+              e.preventDefault();
+              if (!self.state.menu) self.openMenu(id, e.currentTarget);
+            }
+          },
+          keyUp: function (e) {
+            if (e.key !== 'Enter') return;
+            var was = self.enterDown, menu = self.enterMenu;
+            self.enterDown = 0; self.enterMenu = false;
+            if (!was || menu || self.state.arranging || self.state.menu) return;
+            self.launch(a.label, fillOf[String(a.cat)], id);
+          },
+          wrapStyle: 'position: relative; flex: none; transition: opacity 160ms ease; ' + (dim ? 'filter: brightness(0.4) saturate(0.6);' : '') + (isArr ? ' z-index: 2;' : ''),
+          colStyle: 'flex: none; display: flex; flex-direction: column; gap: 18px; align-items: flex-start; width: ' + w + 'px; padding: 0; margin: 0; border: none; background: transparent; cursor: pointer; font-family: inherit; color: inherit; outline: none; touch-action: manipulation; -webkit-touch-callout: none; transition: width 180ms ease;',
+          tileStyle: 'display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: ' + w + 'px; height: ' + h + 'px; border-radius: 12px; background: ' + fillOf[String(a.cat)] + '; transition: all 180ms ease; ' + (isArr
+            ? 'box-shadow: 0 0 0 4px #F4F2EE, 0 0 0 10px rgba(244,242,238,0.25), 0 20px 40px rgba(0,0,0,0.5);'
+            : sel ? 'box-shadow: 0 0 0 4px #F4F2EE, 0 20px 40px rgba(0,0,0,0.5);'
+            : ''),
+          labelOuter: 'display: block; height: 32px; line-height: 32px; width: ' + w + 'px; overflow: hidden; white-space: nowrap; text-align: left; -webkit-mask-image: ' + mask + '; mask-image: ' + mask + ';',
+          labelInner: 'display: inline-block; white-space: nowrap; font-size: 24px; font-weight: 500; ' + (sel ? 'color: #F4F2EE;' : 'color: #9A9892;') + (sel && long
+            ? ' padding-right: 28px; animation: tvMarquee ' + dur.toFixed(1) + 's ease-in-out 0.4s infinite alternate;'
+            : '')
+        };
+      });
+      var active = focusIdx >= 0;
+      return {
+        title: r.title,
+        empty: n === 0,
+        titleStyle: 'margin: 0; font-size: 30px; line-height: 40px; font-weight: 500; color: ' + (active ? '#F4F2EE' : '#9A9892') + ';',
+        meta: active ? (focusIdx + 1) + ' / ' + n : n + ' ứng dụng',
+        apps: apps
+      };
+    });
+
+    // ---- Context menu ----
+    var menu = st.menu;
+    var menuItems = [];
+    var menuTitle = '';
+    var menuStyle = '';
+    if (menu) {
+      var mid = menu.id;
+      var mApp = byId[mid];
+      var isFav = !!favSet[mid];
+      menuTitle = mApp.label;
+      menuItems.push({ label: 'Mở', isOpen: true, run: function () { self.setState({ menu: null }); self.launch(mApp.label, fillOf[String(mApp.cat)], mid); } });
+      if (isFav) {
+        menuItems.push({ label: 'Sắp xếp', isArrange: true, run: function () { self.startArrange(mid); } });
+        menuItems.push({ label: 'Xóa ưa thích', isRemove: true, run: function () { self.removeFav(mid); } });
+      } else {
+        menuItems.push({ label: 'Thêm vào ưa thích', isAdd: true, run: function () { self.addFav(mid); } });
+      }
+      menuItems.push({ label: 'Thông tin ứng dụng', isInfo: true, run: function () { self.setState({ menu: null, panel: 'info', infoApp: mid }); } });
+      menuStyle = 'position: absolute; z-index: 6; left: ' + menu.left + 'px; top: ' + menu.top + 'px; width: 380px; box-sizing: border-box; padding: 8px; border-radius: 20px; background: #1F2025; border: 1px solid #2E3035; box-shadow: 0 30px 80px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 2px; animation: tvPop 140ms ease-out';
+    }
+
+    // ---- Search ----
+    var norm = function (s) {
+      return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().trim();
+    };
+    var q = st.q;
+    var nq = norm(q);
+    var found = nq
+      ? allApps.filter(function (a) { return norm(a.label).indexOf(nq) >= 0; })
+      : allApps.slice().sort(function (x, y) { return x.label.localeCompare(y.label, 'vi'); });
+    var results = found.map(function (a) {
+      return {
+        label: a.label,
+        tileStyle: 'display: flex; align-items: center; justify-content: center; width: 320px; height: 180px; border-radius: 12px; background: ' + fillOf[String(a.cat)] + ';',
+        open: function () { self.setState({ search: false, q: '' }); self.launch(a.label, fillOf[String(a.cat)], null); }
+      };
+    });
+    var searchHover = st.hover === 'search';
+
+    var infoApp = st.infoApp ? byId[st.infoApp] : null;
+    var wifiOn = st.wifiOn;
+    return {
+      rootRef: this.rootRef,
+      bg: tint,
+      wall: { dusk: wk === 'dusk', teal: wk === 'teal', desert: wk === 'desert', c32: wk === 'c32', c23: wk === 'c23' },
+      // Vùng hiển thị ảnh: chỉ góc trên phải. Ngoài khung là màu nền thuần; các mép khung nằm đúng chỗ lớp phủ đã đạt 100%.
+      // Mép trái khung ảnh nằm ở giữa đồng hồ to → ảnh chờ lên nửa phải đồng hồ
+      // Chỉ hiện ảnh qua một mặt nạ hình elip tâm ở góc trên phải: góc dưới trái bo tròn hoàn toàn,
+      // mép trái và mép dưới của khung đều về 0 nên ngoài khung chỉ còn màu nền
+      wallBox: (function () {
+        var s = [];
+        for (var i = 0; i <= 12; i++) {
+          var t = i / 12;
+          s.push('rgba(0,0,0,' + (1 - gEase(t)).toFixed(3) + ') ' + (42 + 58 * t).toFixed(1) + '%');
+        }
+        var m = 'radial-gradient(ellipse farthest-side at 100% 0%, #000 0%, ' + s.join(', ') + ')';
+        return 'position: absolute; left: ' + Math.round(120 + st.clockEm * 128 / 2) + 'px; top: 0; right: 0; height: 760px; overflow: hidden; -webkit-mask-image: ' + m + '; mask-image: ' + m + ';';
+      })(),
+      hasCustom: !!st.custom,
+      customIs: { c32: st.custom === 'c32', c23: st.custom === 'c23' },
+      pickLabel: st.custom ? 'Thay ảnh của bạn…' : '+  Chọn ảnh từ bộ nhớ',
+      pickBtnStyle: 'grid-column: ' + (st.custom ? 'auto' : '1 / -1') + '; display: flex; align-items: center; justify-content: center; gap: 12px; ' + (st.custom ? 'aspect-ratio: 16 / 9; align-self: start; ' : 'height: 64px; ') + 'border-radius: 12px; border: 1.5px dashed #3A3B3F; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 22px; font-weight: 500; cursor: pointer; padding: 0 16px; text-align: center',
+      pickFromStorage: function () {
+        // Giả lập: mỗi lần chọn đổi qua lại giữa ảnh 3:2 và 2:3; ảnh mới thay ảnh cũ và được đặt làm hình nền ngay
+        var next = self.state.custom === 'c32' ? 'c23' : 'c32';
+        self.setState({ custom: next, wall: next });
+      },
+      openWall: function () { self.setState({ panel: 'wall' }); },
+      pickWall: {
+        dusk: function () { self.setState({ wall: 'dusk' }); },
+        teal: function () { self.setState({ wall: 'teal' }); },
+        desert: function () { self.setState({ wall: 'desert' }); },
+        none: function () { self.setState({ wall: 'none' }); },
+        custom: function () { if (self.state.custom) self.setState({ wall: self.state.custom }); }
+      },
+      wsel: { dusk: String(wk === 'dusk'), teal: String(wk === 'teal'), desert: String(wk === 'desert'), none: String(wk === 'none'), custom: String(!!st.custom && wk === st.custom) },
+      thumb: (function () {
+        var o = {};
+        ['dusk', 'teal', 'desert', 'none', 'custom'].forEach(function (k) {
+          var on = k === 'custom' ? (!!st.custom && wk === st.custom) : wk === k;
+          o[k] = 'display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; transition: box-shadow 140ms ease; background: ' + (k === 'none' ? 'rgb(14,15,17)' : '#222') + '; ' + (k === 'none' ? 'border: 1.5px solid #3A3B3F; box-sizing: border-box; ' : '') + (on ? 'box-shadow: 0 0 0 4px #F4F2EE;' : '');
+        });
+        return o;
+      })(),
+      wallLayer: 'position: absolute; inset: 0; pointer-events: none; opacity: ' + (wk === 'none' ? 0 : (1 - eHP)).toFixed(3) + ';',
+      // Lớp phủ trong khung (toạ độ tính từ mép khung): mép trái và mép dưới đều là 100% màu nền, nên ra ngoài khung không có đường nối
+      // Khung bắt đầu ngay bên phải đồng hồ to (x=480) và xuống tới khoảng 2/3 tile hàng Ưa thích (y≈720).
+      // Trái: 100% → 0% trong 720px. Dưới: 0% ở y=240 → 100% ở y=750 (khung cao 760).
+      scrim: 'position: absolute; inset: 0; background: linear-gradient(to bottom, ' + ta(0.45) + ' 0px, ' + ta(0) + ' 170px);',
+      rows: rows,
+      inputName: inputDefs[st.input].name,
+      arrangingNow: !!arr,
+      notArranging: !arr,
+      arrangingLabel: arr ? byId[arr].label : '',
+      toast: st.toast,
+
+      launching: !!st.launching,
+      launchLabel: st.launching ? st.launching.label : '',
+      launchAria: st.launching ? st.launching.label + ' – giả lập app đang chạy, bấm để quay lại' : '',
+      launchStyle: 'position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; border: none; padding: 0; margin: 0; cursor: pointer; font-family: inherit; outline: none; animation: tvLaunch 260ms cubic-bezier(.2,.8,.2,1); background: ' + (st.launching ? st.launching.fill : '#000') + ';',
+      closeLaunch: function () { self.closeLaunch(); },
+      launchKey: function (e) { var k = e.key; if (k === 'Escape' || k === 'Backspace' || k === 'GoBack' || k === 'BrowserBack') { e.preventDefault(); self.closeLaunch(); } },
+      // Khoảng cách chuẩn: đáy cụm đồng hồ (dòng thời tiết, y = 232+128+14+36+14+34 = 458) → đỉnh tiêu đề hàng Ưa thích (y = 160+370 = 530) = 72px.
+      // Giữa các hàng: đáy nhãn của tile KHÔNG được chọn (tile 180 + 18 + nhãn 32 = 230) → đỉnh tiêu đề hàng sau = 72px.
+      // Dải tile để dư 18px đáy cho tile đang chọn phóng to, nên khoảng cách giữa các section = 72 − 18.
+      rowGap: 530 - (232 + 128 + 14 + 36 + 14 + 34) - 18,
+      onVpScroll: function (e) {
+        var t = e.currentTarget.scrollTop;
+        var p = Math.round(Math.min(1, Math.max(0, t / 220)) * 100) / 100;
+        if (p === self.state.hp) return;
+        if (self.raf) cancelAnimationFrame(self.raf);
+        self.raf = requestAnimationFrame(function () { self.setState({ hp: p }); });
+      },
+      clockStyle: (function () {
+        var e = st.hp * st.hp * (3 - 2 * st.hp);
+        var L = function (a, b) { return a + (b - a) * e; };
+        return 'position: absolute; left: 120px; top: ' + L(232, 74).toFixed(1) + 'px; z-index: 2; font-size: ' + L(128, 44).toFixed(1) + 'px; font-weight: ' + Math.round(L(300, 600)) + '; letter-spacing: ' + L(-4, -0.5).toFixed(2) + 'px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none;';
+      })(),
+      dateStyle: (function () {
+        var e = st.hp * st.hp * (3 - 2 * st.hp);
+        var L = function (a, b) { return a + (b - a) * e; };
+        var top = L(232, 74) + L(128, 44) + 14;
+        return 'position: absolute; left: 120px; top: ' + top.toFixed(1) + 'px; z-index: 2; font-size: 28px; line-height: 36px; color: #9A9892; white-space: nowrap; pointer-events: none; opacity: ' + Math.max(0, 1 - e * 2.2).toFixed(2) + '; transform: translateY(' + (-e * 16).toFixed(1) + 'px);';
+      })(),
+      dateHidden: st.hp > 0.45 ? 'true' : 'false',
+      // Thời tiết: dữ liệu mẫu. fresh = vừa cập nhật; stale = mất mạng, hiện số liệu cũ; off = không có dữ liệu / tắt → ẩn
+      weatherOn: (this.props.weather ?? 'fresh') !== 'off',
+      weatherStale: (this.props.weather ?? 'fresh') === 'stale',
+      weatherStyle: (function () {
+        var e = st.hp * st.hp * (3 - 2 * st.hp);
+        var L = function (a, b) { return a + (b - a) * e; };
+        var top = L(232, 74) + L(128, 44) + 14 + 50;
+        return 'position: absolute; left: 120px; top: ' + top.toFixed(1) + 'px; z-index: 2; height: 34px; display: flex; align-items: center; gap: 14px; font-size: 24px; color: #C9C7C1; white-space: nowrap; pointer-events: none; opacity: ' + Math.max(0, 1 - e * 2.6).toFixed(2) + '; transform: translateY(' + (-e * 20).toFixed(1) + 'px);';
+      })(),
+      pillWrap: (function () {
+        var e = st.hp * st.hp * (3 - 2 * st.hp);
+        return 'position: absolute; top: 64px; left: ' + (120 + (st.clockEm * 44 + 32) * e).toFixed(1) + 'px; z-index: 2;';
+      })(),
+
+      searchPill: 'display: flex; align-items: center; gap: 14px; height: 64px; box-sizing: border-box; padding: 0 32px 0 24px; border-radius: 32px; cursor: pointer; font-family: inherit; font-size: 24px; font-weight: 500; outline: none; transition: all 140ms ease; ' +
+        (searchHover ? 'background: #F4F2EE; color: #0E0F11; border: 1.5px solid #F4F2EE; transform: scale(1.04);' : 'background: ' + glassBg + '; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: #C9C7C1; border: 1.5px solid #3A3B3F;'),
+      openSearch: function () { self.setState({ search: true, q: '', hover: null }); },
+      closeSearch: function () { self.setState({ search: false, q: '', hover: null }); },
+      searchKey: function (e) { if (e.key === 'Escape' || e.key === 'GoBack' || e.key === 'BrowserBack') { e.preventDefault(); self.setState({ search: false, q: '', hover: null }); } },
+      onQ: function (e) { self.setState({ q: e.target.value }); },
+      voiceOpen: st.voice,
+      openVoice: function () { self.setState({ voice: true, hover: null }); },
+      voiceSample: function () { self.setState({ voice: false, q: 'phim' }); },
+      voiceCancel: function () { self.setState({ voice: false }); },
+      voiceKey: function (e) { if (e.key === 'Escape' || e.key === 'GoBack' || e.key === 'BrowserBack') { e.preventDefault(); e.stopPropagation(); self.setState({ voice: false }); } },
+      searchOpen: st.search,
+      q: q,
+      results: results,
+      noResults: !!nq && results.length === 0,
+      resultTitle: nq ? (results.length ? results.length + ' ứng dụng phù hợp' : '') : 'Tất cả ứng dụng (' + results.length + ')',
+
+      menuOpen: !!menu,
+      menuTitle: menuTitle,
+      menuItems: menuItems,
+      menuStyle: menuStyle,
+      closeMenu: function () { self.closeMenu(true); },
+      menuKey: function (e) {
+        var k = e.key;
+        if (k === 'Escape' || k === 'Backspace' || k === 'GoBack' || k === 'BrowserBack') { e.preventDefault(); self.closeMenu(true); return; }
+        if (k === 'ArrowDown' || k === 'ArrowUp') {
+          e.preventDefault();
+          var items = Array.prototype.slice.call(e.currentTarget.querySelectorAll('button'));
+          var i = items.indexOf(document.activeElement);
+          var j = k === 'ArrowDown' ? Math.min(items.length - 1, i + 1) : Math.max(0, i - 1);
+          if (items[j]) items[j].focus();
+        }
+      },
+
+      btn: btn, hv: hv, hIn: hIn,
+      hOut: function () { if (self.state.hover !== null) self.setState({ hover: null }); },
+      labelStyle: 'position: absolute; top: 80px; right: 0; white-space: nowrap; padding: 8px 16px; border-radius: 10px; background: #F4F2EE; color: #0E0F11; font-size: 20px; font-weight: 500; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.4);',
+      labelStyleLeft: 'position: absolute; top: 80px; left: 0; white-space: nowrap; padding: 8px 16px; border-radius: 10px; background: #F4F2EE; color: #0E0F11; font-size: 20px; font-weight: 500; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.4);',
+      hasNotif: nCount > 0,
+      noNotif: nCount === 0,
+      notifCount: nCount > 9 ? '9+' : String(nCount),
+      notifAria: nCount ? 'Thông báo, ' + nCount + ' mới' : 'Thông báo',
+      notifTitle: nCount ? nCount + ' thông báo mới' : 'Không có thông báo',
+      notifs: st.notifs.map(function (n) {
+        return { app: n.app, time: n.time, title: n.title, body: n.body, dismiss: function () { self.setState({ notifs: self.state.notifs.filter(function (x) { return x.id !== n.id; }) }); } };
+      }),
+      clearNotifs: function () { self.setState({ notifs: [] }); },
+      openNotif: function () { self.setState({ panel: 'notif' }); },
+      lbl: { notif: nCount ? nCount + ' thông báo mới' : 'Thông báo', input: 'Nguồn vào · ' + inputDefs[st.input].name, bt: btLabel, net: netLabel },
+      net: net,
+      netAria: 'Mạng: ' + netLabel,
+
+      openInput: function () { self.setState({ panel: 'input' }); },
+      openNet: function () { self.setState({ panel: 'net' }); },
+      openBt: function () { self.setState({ panel: 'bt' }); },
+      closePanel: function () {
+        if (self.state.panel === 'info' && self.state.infoApp) self.pendingFocus = self.state.infoApp;
+        self.setState({ panel: null });
+      },
+      panelOpen: st.panel !== null,
+      panel: { wall: st.panel === 'wall', notif: st.panel === 'notif', input: st.panel === 'input', net: st.panel === 'net', bt: st.panel === 'bt', info: st.panel === 'info' },
+      info: {
+        label: infoApp ? infoApp.label : '',
+        cat: infoApp ? (infoApp.cat ? catTitle[infoApp.cat] + ' (' + infoApp.cat + ')' : 'Không khai báo → xếp vào “Khác”') : '',
+        bannerStyle: 'display: flex; align-items: center; justify-content: center; width: 320px; height: 180px; border-radius: 12px; background: ' + (infoApp ? fillOf[String(infoApp.cat)] : '#3A3B40') + ';'
+      },
+
+      inputs: inputs,
+      netTitle: netTitle,
+      netSub: netSub,
+      netSubStyle: 'font-size: 22px; color: ' + (ns === 'error' || ns === 'offline' || ns === 'wifi-weak' ? '#E8A04B' : '#9A9892') + ';',
+      ethSub: ns === 'ethernet' ? 'Đã kết nối · ' + lanName : 'Chưa cắm dây',
+      wifiOn: wifiOn,
+      wifiOnStr: wifiOn ? 'true' : 'false',
+      toggleWifi: function () { self.setState({ wifiOn: !self.state.wifiOn }); },
+      switchTrack: 'position: relative; display: block; width: 64px; height: 36px; border-radius: 18px; transition: background 140ms ease; background: ' + (wifiOn ? '#9FD3B5' : '#3A3B3F') + ';',
+      switchKnob: 'position: absolute; top: 4px; left: ' + (wifiOn ? '32px' : '4px') + '; width: 28px; height: 28px; border-radius: 50%; background: #0E0F11; transition: left 140ms ease;',
+      wifiList: wifiList,
+
+      btConnected: btConnected,
+      btPaired: btPaired
+    };
+  }
+}
+</script>
+</body>
+</html>
