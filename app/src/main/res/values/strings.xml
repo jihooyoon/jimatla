@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Mini TV Launcher</string>
+    <string name="app_name" translatable="false">Mini TV Launcher</string>
     <string name="launch_failed">Couldn\'t open %1$s</string>
 
     <string name="row_favorites">Favorites</string>
@@ -9,7 +9,7 @@
         <item quantity="one">%d app</item>
         <item quantity="other">%d apps</item>
     </plurals>
-    <string name="row_position">%1$d / %2$d</string>
+    <string name="row_position" translatable="false">%1$d / %2$d</string>
 
     <string name="menu_open">Open</string>
     <string name="menu_add_favorite">Add to favorites</string>
@@ -26,9 +26,9 @@
     <string name="inputs_title">Choose an input</string>
     <string name="bluetooth">Bluetooth &amp; accessories</string>
     <string name="settings">Settings</string>
-    <string name="net_wifi">Wi‑Fi</string>
+    <string name="net_wifi" translatable="false">Wi‑Fi</string>
     <string name="net_weak">%1$s · Weak signal</string>
-    <string name="net_ethernet">Ethernet</string>
+    <string name="net_ethernet" translatable="false">Ethernet</string>
     <string name="net_offline">No network connection</string>
     <string name="net_no_internet">%1$s · No Internet</string>
     <string name="notifications">Notifications</string>

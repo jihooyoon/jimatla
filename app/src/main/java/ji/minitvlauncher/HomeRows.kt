@@ -1,12 +1,14 @@
 package ji.minitvlauncher
 
 import android.content.ComponentName
+import android.annotation.SuppressLint
 import android.content.pm.ApplicationInfo
 import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.Color
 import java.text.Normalizer
 
 /** A category row on the home screen; also gives tiles without a banner their color. */
+@SuppressLint("InlinedApi") // CATEGORY_ACCESSIBILITY is a constant; older systems just never report it
 enum class AppCategory(val code: Int, @StringRes val title: Int, val fill: Color) {
     Video(ApplicationInfo.CATEGORY_VIDEO, R.string.cat_video, Color(0xFF2B3A55)),
     Audio(ApplicationInfo.CATEGORY_AUDIO, R.string.cat_audio, Color(0xFF2F4A3C)),

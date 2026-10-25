@@ -81,6 +81,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -583,6 +585,7 @@ private fun AppTile(
                 onLongClick = { if (ui.arranging == null) ui.menuFor = app.component },
                 modifier = Modifier
                     .size(TILE_W.px, TILE_H.px)
+                    .semantics { contentDescription = app.label }
                     .focusRequester(focus)
                     .then(if (extraFocus != null) Modifier.focusRequester(extraFocus) else Modifier)
                     .bringIntoViewRequester(bringIntoView)

@@ -30,6 +30,8 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.tv.material3.Border
@@ -110,7 +112,7 @@ private fun RoundButton(b: TopButton, placement: Modifier, focus: Modifier) {
     Box(placement) {
         Surface(
             onClick = b.onClick,
-            modifier = focus.size(64.px),
+            modifier = focus.size(64.px).semantics { contentDescription = b.label },
             shape = ClickableSurfaceDefaults.shape(CircleShape),
             colors = ClickableSurfaceDefaults.colors(
                 containerColor = LocalBackdrop.current.copy(alpha = 0.55f),

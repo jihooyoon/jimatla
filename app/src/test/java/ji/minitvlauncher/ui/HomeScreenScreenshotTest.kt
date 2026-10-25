@@ -313,4 +313,15 @@ class HomeScreenScreenshotTest {
         captureScreenRoboImage("build/outputs/roborazzi/search_voice.png")
     }
 
+
+    /** French has no translation yet, so the launcher falls back to English; dates still follow the system. */
+    @Test
+    @Config(qualifiers = "fr-w960dp-h540dp-land-xhdpi")
+    fun untranslatedLanguageFallsBackToEnglish() {
+        show(apps.take(2))
+        compose.onNodeWithText("Favorites").assertExists()
+        compose.onNodeWithText("Video & movies").assertExists()
+        compose.onNodeWithText("jeudi 22 octobre").assertExists()
+        shot("language_fallback_fr")
+    }
 }

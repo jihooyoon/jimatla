@@ -1,5 +1,6 @@
 package ji.minitvlauncher.system
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
@@ -16,6 +17,7 @@ enum class NetKind { Wifi, WifiWeak, Ethernet, Offline, NoInternet }
 data class NetStatus(val kind: NetKind, val name: String? = null)
 
 /** The default network as the top bar shows it, updated as connectivity changes. */
+@SuppressLint("InlinedApi") // UNKNOWN_SSID is a constant string, the same on older systems
 fun networkStatus(context: Context): Flow<NetStatus> = callbackFlow {
     val cm = context.getSystemService(ConnectivityManager::class.java)
     val wifi = context.applicationContext.getSystemService(WifiManager::class.java)

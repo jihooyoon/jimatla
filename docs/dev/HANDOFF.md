@@ -5,10 +5,16 @@ Cập nhật lần cuối: 2026-10-26. Người dùng nói tiếng Việt, xưng
 ## Mục tiêu
 Viết launcher Android TV tối giản (jimatla) thay `com.google.android.tvlauncher` (đầy quảng cáo, tốn ~150 MB RAM) trên TV của người dùng, và giảm tối đa việc TV dùng internet khi không ở trong app nào.
 
-## Trạng thái (26/10)
-Bản tối thiểu đã chạy trên TV làm màn Home, cuộn mượt (bản release). Đã commit + push lên `main`.
-**Đã dọn TV (26/10, theo yêu cầu):** bật lại `tvlauncher`, đặt lại làm Home, gỡ hẳn `ji.minitvlauncher`. TV đang ở trạng thái như trước khi thử launcher. Lần sau cài lại: cài APK → `pm disable-user --user 0 com.google.android.tvlauncher` (cần hỏi người dùng) → bấm Home thử.
-Cách làm tiếp: code + build trên máy tính, KHÔNG dùng máy ảo (người dùng không muốn). Xem giao diện bằng ảnh chụp Roborazzi (JVM) nếu cần; phần cần TV thật (độ mượt, RAM, nguồn vào, thông báo, vị trí, giọng nói, banner thật) gom lại để thử khi người dùng bật TV.
+## Trạng thái (26/10, cuối ngày)
+Đã code xong 7 bước theo thiết kế, mỗi bước test trên máy tính (Robolectric + ảnh chụp Roborazzi) rồi commit + push lên `main`. **CHƯA thử bất kỳ bước nào trên TV thật** — TV đang tắt, launcher cũ đang là màn Home, `ji.minitvlauncher` đã gỡ khỏi TV.
+
+### Việc tiếp theo: thử trên TV (người dùng bật TV)
+1. `adb connect 192.168.<x>.179:5555`, `./gradlew assembleRelease`, cài APK, `adb shell cmd package compile -m speed -f ji.minitvlauncher`.
+2. Hỏi người dùng rồi mới `pm disable-user --user 0 com.google.android.tvlauncher` để launcher mới làm Home (xem "Thao tác riêng trên TV").
+3. Cấp quyền đọc thông báo: `adb shell cmd notification allow_listener ji.minitvlauncher/ji.minitvlauncher.system.NotificationReader`.
+4. Nhờ người dùng thử (TAO KHÔNG bấm phím giả lập): cuộn mượt không; nhấn giữ OK mở menu; thêm/xóa/sắp xếp ưa thích; nút Bluetooth/Mạng/Cài đặt mở đúng màn; Nguồn vào liệt kê HDMI và chuyển được; chuông + bảng thông báo; hình nền (xử lý lần đầu mất bao lâu, chọn ảnh từ USB, chia sẻ từ X-plore); hộp thoại quyền vị trí + dòng thời tiết; tìm kiếm (bàn phím ảo có hiện không) + giọng nói.
+5. Đo RAM: `adb shell dumpsys meminfo ji.minitvlauncher` (so với tvlauncher ~150 MB).
+6. Danh mục app thật: nhiều app TV không khai báo `appCategory` → có thể dồn vào "Khác"; xem thực tế rồi tính.
 
 ### Bước tiếp theo — làm theo thiết kế (thứ tự đã đề xuất, người dùng chưa phản đối)
 Trước khi code: đọc kỹ `docs/dev/design/Main.dc.html` + 3 ghi chú trong `docs/dev/design/canvas.json`. Mỗi bước xong cài lên TV, đo RAM (`dumpsys meminfo ji.minitvlauncher`) và độ mượt.
@@ -31,7 +37,7 @@ Trước khi code: đọc kỹ `docs/dev/design/Main.dc.html` + 3 ghi chú trong
    - Cần thử trên TV: bàn phím ảo có hiện khi ô nhập được focus không (ô nhập nằm trong Popup), giọng nói tiếng Việt qua katniss.
    - Chưa làm (thiết kế ghi ưu tiên THẤP): tự đóng màn Tìm kiếm khi người dùng bấm nút giọng nói trên remote mở Assistant.
    - Bài học: trong Popup phải lấy `LocalFocusManager` BÊN TRONG nội dung Popup, lấy bên ngoài là focus manager của cửa sổ chính.
-7. Ngôn ngữ: theo ngôn ngữ hệ thống, chưa có bản dịch → tiếng Anh. Đây chính là cơ chế tài nguyên mặc định của Android (`values/` = tiếng Anh, `values-vi/` = tiếng Việt) → không cần chọn ngôn ngữ trong app, không cần AppCompat. Việc còn lại: mọi chữ hiển thị đều lấy từ `strings.xml`, bản tiếng Anh luôn đầy đủ.
+7. ~~Ngôn ngữ~~ — XONG 26/10: theo ngôn ngữ hệ thống, chưa có bản dịch → tiếng Anh (cơ chế tài nguyên Android, `values/` = tiếng Anh đầy đủ, `values-vi/`). Không có chọn ngôn ngữ trong app. Lint sạch lỗi (`MissingTranslation`: các chuỗi không cần dịch đánh `translatable="false"`). Có test tiếng Pháp → hiện tiếng Anh, ngày theo tiếng Pháp. Thêm nhãn TalkBack cho ô app và nút tròn. Thêm tiếng mới: tạo `values-xx/strings.xml`.
 
 ### Thao tác riêng trên TV (không thuộc kế hoạch code)
 - Bỏ `tvlauncher` và `tvrecommendations`: chỉ làm khi người dùng yêu cầu và xác nhận rõ ràng ngay lúc đó; đề nghị trước đó không tính.
