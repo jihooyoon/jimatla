@@ -103,6 +103,12 @@ import ji.minitvlauncher.system.NetKind
 import ji.minitvlauncher.system.NetStatus
 import ji.minitvlauncher.system.NotificationItem
 import ji.minitvlauncher.system.TvInputItem
+import ji.minitvlauncher.wallpaper.Backdrop
+import ji.minitvlauncher.wallpaper.WallpaperChoice
+import ji.minitvlauncher.wallpaper.WallpaperPipeline
+import androidx.compose.animation.core.Animatable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.ImageBitmap
 import ji.minitvlauncher.ui.theme.Palette
 import ji.minitvlauncher.ui.theme.Type
 import ji.minitvlauncher.ui.theme.px
@@ -127,7 +133,21 @@ interface HomeActions {
     fun switchInput(input: TvInputItem)
     fun openNotification(item: NotificationItem)
     fun clearNotifications()
+    fun selectWallpaper(choice: WallpaperChoice)
+    /** The system picker where there is one, else the launcher's own. */
+    fun pickWallpaperImage()
+    suspend fun wallpaperThumbnail(choice: WallpaperChoice): ImageBitmap?
 }
+
+/** The chosen wallpaper and what to paint for it. */
+data class WallpaperState(
+    val choice: WallpaperChoice = WallpaperChoice.None,
+    val hasCustom: Boolean = false,
+    val backdrop: Backdrop = Backdrop(WallpaperPipeline.NEUTRAL),
+)
+
+/** Backdrop color of the current wallpaper, for surfaces that blend into it. */
+val LocalBackdrop = staticCompositionLocalOf { Palette.Background }
 
 enum class SystemScreen { Bluetooth, Network, Settings }
 
@@ -140,7 +160,7 @@ data class SystemStatus(
     val inputs: List<TvInputItem> = emptyList(),
 )
 
-private enum class Panel { Inputs, Notifications }
+private enum class Panel { Inputs, Notifications, Wallpaper }
 
 // Layout from the design, in 1920×1080 design pixels.
 private const val VIEWPORT_TOP = 160
@@ -174,6 +194,7 @@ fun HomeScreen(
     images: AppImageSource,
     actions: HomeActions,
     status: SystemStatus = SystemStatus(),
+    wallpaper: WallpaperState = WallpaperState(),
     homePresses: Int = 0,
     now: () -> Date = ::Date,
 ) {
@@ -211,7 +232,10 @@ fun HomeScreen(
     }
     val onMove: (AppEntry, Int) -> Unit = { app, delta -> actions.setFavorites(favorites.moved(app.component, delta)) }
 
-    Box(Modifier.fillMaxSize().background(Palette.Background)) {
+    val backdrop = Color(wallpaper.backdrop.color)
+    CompositionLocalProvider(LocalBackdrop provides backdrop) {
+    Box(Modifier.fillMaxSize().background(backdrop)) {
+        BackdropImage(wallpaper.backdrop.frame, collapse)
         RowsViewport(rows, images, actions, ui, onMenuAction, onMove, scroll, firstTile, firstRowWithApps)
         ViewportEdges(collapse)
         Clock(collapse, now)
@@ -222,6 +246,14 @@ fun HomeScreen(
     }
 
     when (ui.panel) {
+        Panel.Wallpaper -> WallpaperPanel(
+            current = wallpaper.choice,
+            hasCustom = wallpaper.hasCustom,
+            thumbnail = actions::wallpaperThumbnail,
+            onSelect = actions::selectWallpaper,
+            onPickImage = { ui.panel = null; actions.pickWallpaperImage() },
+            onDismiss = { ui.panel = null },
+        )
         Panel.Inputs -> InputPanel(
             status.inputs,
             onPick = { ui.panel = null; actions.switchInput(it) },
@@ -235,6 +267,7 @@ fun HomeScreen(
             onDismiss = { ui.panel = null },
         )
         null -> Unit
+    }
     }
 
     LaunchedEffect(firstRowWithApps >= 0, homePresses) {
@@ -281,6 +314,7 @@ private fun topButtons(status: SystemStatus, actions: HomeActions, ui: HomeUi): 
             ),
         )
     }
+    add(TopButton("wall", Icons.Wallpaper, stringResource(R.string.wallpaper), onClick = { ui.panel = Panel.Wallpaper }))
     add(TopButton("settings", Icons.Settings, stringResource(R.string.settings), onClick = { actions.openSystem(SystemScreen.Settings) }))
 }
 
@@ -676,12 +710,33 @@ private fun BottomPill(ui: HomeUi, rows: List<HomeRow>) {
 }
 
 /**
+ * The processed wallpaper in the top-right frame: fades in once decoded, and out as rows scroll up,
+ * in step with the clock. Everything else about it was baked in when it was chosen.
+ */
+@Composable
+private fun BackdropImage(frame: ImageBitmap?, collapse: () -> Float) {
+    frame ?: return
+    val shown = remember(frame) { Animatable(0f) }
+    LaunchedEffect(frame) { shown.animateTo(1f, tween(200)) }
+    Image(
+        frame,
+        contentDescription = null,
+        contentScale = ContentScale.FillBounds,
+        modifier = Modifier
+            .offset(x = WallpaperPipeline.FRAME_LEFT.px)
+            .size(WallpaperPipeline.FRAME_WIDTH.px, WallpaperPipeline.FRAME_HEIGHT.px)
+            .graphicsLayer { alpha = shown.value * (1f - collapse()) },
+    )
+}
+
+/**
  * Rows fade in under the clock and out at the bottom. Painted in the background color rather than
  * masked, so no offscreen layer is needed while scrolling; the top one only shows once scrolled,
  * which keeps it off the wallpaper.
  */
 @Composable
 private fun ViewportEdges(collapse: () -> Float) {
+    val backdrop = LocalBackdrop.current
     Box(Modifier.fillMaxSize()) {
         Box(
             Modifier
@@ -689,14 +744,14 @@ private fun ViewportEdges(collapse: () -> Float) {
                 .fillMaxWidth()
                 .height(72.px)
                 .graphicsLayer { alpha = collapse() }
-                .background(Brush.verticalGradient(listOf(Palette.Background, Palette.Background.copy(alpha = 0f)))),
+                .background(Brush.verticalGradient(listOf(backdrop, backdrop.copy(alpha = 0f)))),
         )
         Box(
             Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
                 .height(64.px)
-                .background(Brush.verticalGradient(listOf(Palette.Background.copy(alpha = 0f), Palette.Background))),
+                .background(Brush.verticalGradient(listOf(backdrop.copy(alpha = 0f), backdrop))),
         )
     }
 }

@@ -113,7 +113,7 @@ private fun RoundButton(b: TopButton, placement: Modifier, focus: Modifier) {
             modifier = focus.size(64.px),
             shape = ClickableSurfaceDefaults.shape(CircleShape),
             colors = ClickableSurfaceDefaults.colors(
-                containerColor = Palette.Background.copy(alpha = 0.55f),
+                containerColor = LocalBackdrop.current.copy(alpha = 0.55f),
                 contentColor = if (b.warn) Palette.Warning else Palette.TextSecondary,
                 focusedContainerColor = Palette.TextBright,
                 focusedContentColor = Palette.Background,

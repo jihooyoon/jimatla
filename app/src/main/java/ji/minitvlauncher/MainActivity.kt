@@ -32,8 +32,18 @@ import ji.minitvlauncher.system.switchToInputIntent
 import ji.minitvlauncher.system.tvInputs
 import ji.minitvlauncher.ui.HomeActions
 import ji.minitvlauncher.ui.HomeScreen
+import ji.minitvlauncher.ui.ImagePicker
 import ji.minitvlauncher.ui.SystemScreen
 import ji.minitvlauncher.ui.SystemStatus
+import ji.minitvlauncher.ui.WallpaperState
+import ji.minitvlauncher.wallpaper.Backdrop
+import ji.minitvlauncher.wallpaper.WallpaperChoice
+import ji.minitvlauncher.wallpaper.Wallpapers
+import ji.minitvlauncher.wallpaper.mediaImages
+import ji.minitvlauncher.wallpaper.mediaThumbnail
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.graphics.ImageBitmap
+import kotlinx.coroutines.flow.collectLatest
 import ji.minitvlauncher.ui.theme.LauncherTheme
 import kotlinx.coroutines.launch
 
@@ -44,6 +54,15 @@ class MainActivity : ComponentActivity(), HomeActions {
     private var homePresses by mutableIntStateOf(0)
     private var inputs by mutableStateOf(emptyList<TvInputItem>())
     private var notificationAccess by mutableStateOf(false)
+    private lateinit var wallpapers: Wallpapers
+    private var wallpaper by mutableStateOf(WallpaperState())
+    private var pickerImages by mutableStateOf<List<Uri>?>(null)
+    private var shownCustomStamp = 0L
+
+    private val systemPicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let(::useAsWallpaper) }
+    private val photoPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) openOwnPicker() else Toast.makeText(this, R.string.picker_permission, Toast.LENGTH_LONG).show()
+    }
 
     private val packageReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) = reload()
@@ -53,7 +72,9 @@ class MainActivity : ComponentActivity(), HomeActions {
         super.onCreate(savedInstanceState)
         repository = AppRepository(applicationContext)
         settings = Settings(applicationContext)
+        wallpapers = Wallpapers(applicationContext, settings)
         reload()
+        lifecycleScope.launch { wallpapers.choice.collectLatest(::showWallpaper) }
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
             addAction(Intent.ACTION_PACKAGE_REMOVED)
@@ -77,7 +98,15 @@ class MainActivity : ComponentActivity(), HomeActions {
                     hasSystemNotificationPanel = remember { packageManager.resolveActivity(systemNotificationsIntent, 0) != null },
                     inputs = inputs,
                 )
-                HomeScreen(rows, repository, this@MainActivity, status, homePresses)
+                HomeScreen(rows, repository, this@MainActivity, status, wallpaper, homePresses)
+                pickerImages?.let { images ->
+                    ImagePicker(
+                        images,
+                        thumbnail = { mediaThumbnail(this@MainActivity, it) },
+                        onPick = { pickerImages = null; useAsWallpaper(it) },
+                        onDismiss = { pickerImages = null },
+                    )
+                }
             }
         }
     }
@@ -85,6 +114,10 @@ class MainActivity : ComponentActivity(), HomeActions {
     override fun onResume() {
         super.onResume()
         notificationAccess = NotificationReader.hasAccess(this)
+        // A picture shared to the launcher while it was in the background.
+        if (wallpaper.choice == WallpaperChoice.Custom && wallpapers.customStamp != shownCustomStamp) {
+            lifecycleScope.launch { showWallpaper(WallpaperChoice.Custom) }
+        }
         Thread { tvInputs(this).also { runOnUiThread { inputs = it } } }.start()
     }
 
@@ -126,6 +159,42 @@ class MainActivity : ComponentActivity(), HomeActions {
     }
 
     override fun openNotification(item: NotificationItem) = NotificationReader.open(item.key)
+
+    override fun selectWallpaper(choice: WallpaperChoice) {
+        lifecycleScope.launch { wallpapers.select(choice) }
+    }
+
+    override fun pickWallpaperImage() {
+        val getContent = Intent(Intent.ACTION_GET_CONTENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE)
+        if (packageManager.resolveActivity(getContent, 0) != null) {
+            runCatching { systemPicker.launch("image/*") }.onSuccess { return }
+        }
+        val permission = if (android.os.Build.VERSION.SDK_INT >= 33) android.Manifest.permission.READ_MEDIA_IMAGES
+        else android.Manifest.permission.READ_EXTERNAL_STORAGE
+        if (checkSelfPermission(permission) == android.content.pm.PackageManager.PERMISSION_GRANTED) openOwnPicker()
+        else photoPermission.launch(permission)
+    }
+
+    override suspend fun wallpaperThumbnail(choice: WallpaperChoice): ImageBitmap? = wallpapers.thumbnail(choice)
+
+    private fun openOwnPicker() {
+        lifecycleScope.launch { pickerImages = mediaImages(this@MainActivity) }
+    }
+
+    private fun useAsWallpaper(uri: Uri) {
+        Toast.makeText(this, R.string.wall_processing, Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            if (wallpapers.setCustom(uri)) showWallpaper(WallpaperChoice.Custom)
+            else Toast.makeText(this@MainActivity, R.string.wall_failed, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /** Paints the stored color at once, then the picture once it is decoded (or rebuilt). */
+    private suspend fun showWallpaper(choice: WallpaperChoice) {
+        if (choice == WallpaperChoice.Custom) shownCustomStamp = wallpapers.customStamp
+        wallpaper = WallpaperState(choice, wallpapers.hasCustom, Backdrop(wallpapers.storedColor(choice), wallpaper.backdrop.frame.takeIf { wallpaper.choice == choice }))
+        wallpaper = wallpaper.copy(backdrop = wallpapers.backdrop(choice))
+    }
 
     override fun clearNotifications() = NotificationReader.dismissAll()
 

@@ -40,6 +40,24 @@
     <string name="notifications_clear_all">Clear all</string>
     <string name="notifications_empty">You\'re all caught up.</string>
 
+    <string name="wallpaper">Wallpaper</string>
+    <string name="wall_eyebrow">Personalize</string>
+    <string name="wall_hint">The background color is worked out from the picture.</string>
+    <string name="wall_dusk">Dusk</string>
+    <string name="wall_teal">Teal</string>
+    <string name="wall_desert">Desert</string>
+    <string name="wall_none">No picture</string>
+    <string name="wall_custom">Your picture</string>
+    <string name="wall_pick">Choose a picture from storage</string>
+    <string name="wall_replace">Replace your picture…</string>
+    <string name="wall_processing">Preparing wallpaper…</string>
+    <string name="wall_set">Wallpaper set</string>
+    <string name="wall_failed">Couldn\'t read that picture</string>
+    <string name="wall_share_label">Set as TV wallpaper</string>
+    <string name="picker_title">Choose a picture</string>
+    <string name="picker_empty">No pictures found. Plug in a USB drive with photos, or share a picture to “Set as TV wallpaper” from a file manager.</string>
+    <string name="picker_permission">Allow access to photos to pick a wallpaper</string>
+
     <string name="cat_video">Video &amp; movies</string>
     <string name="cat_audio">Music &amp; audio</string>
     <string name="cat_game">Games</string>

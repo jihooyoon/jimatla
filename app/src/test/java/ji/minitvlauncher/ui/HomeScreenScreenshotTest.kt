@@ -2,7 +2,13 @@ package ji.minitvlauncher.ui
 
 import android.content.ComponentName
 import android.content.pm.ApplicationInfo
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import androidx.test.core.app.ApplicationProvider
+import ji.minitvlauncher.wallpaper.Backdrop
+import ji.minitvlauncher.wallpaper.WallpaperChoice
+import ji.minitvlauncher.wallpaper.WallpaperPipeline
 import android.graphics.Canvas
 import android.graphics.LinearGradient
 import android.graphics.Paint
@@ -97,7 +103,13 @@ class HomeScreenScreenshotTest {
         override fun switchInput(input: TvInputItem) { opened += input.label }
         override fun openNotification(item: NotificationItem) { opened += item.title }
         override fun clearNotifications() {}
+        override fun selectWallpaper(choice: WallpaperChoice) { wallpaper = wallpaper.copy(choice = choice) }
+        override fun pickWallpaperImage() { opened += "picker" }
+        override suspend fun wallpaperThumbnail(choice: WallpaperChoice) =
+            choice.asset?.let { a -> context.assets.open(a).use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = 4 }) }?.asImageBitmap() }
     }
+    private val context get() = ApplicationProvider.getApplicationContext<Context>()
+    private var wallpaper by mutableStateOf(WallpaperState())
     private val opened = mutableListOf<String>()
     private var status by mutableStateOf(SystemStatus())
 
@@ -108,7 +120,7 @@ class HomeScreenScreenshotTest {
         compose.mainClock.autoAdvance = false
         compose.setContent {
             LauncherTheme {
-                HomeScreen(buildRows(apps, favorites), images, actions, status, now = { fixedTime })
+                HomeScreen(buildRows(apps, favorites), images, actions, status, wallpaper, now = { fixedTime })
             }
         }
         settle()
@@ -237,5 +249,32 @@ class HomeScreenScreenshotTest {
         captureScreenRoboImage("build/outputs/roborazzi/panel_inputs.png")
         press(listOf(Key.DirectionDown, Key.DirectionCenter))
         assertEquals(listOf("HDMI 2"), opened)
+    }
+
+    private fun dusk(): WallpaperState {
+        val src = context.assets.open("wallpapers/dusk.jpg").use(BitmapFactory::decodeStream)
+        val result = WallpaperPipeline.process(src)
+        return WallpaperState(WallpaperChoice.Dusk, false, Backdrop(result.color, result.frame.asImageBitmap()))
+    }
+
+    @Test
+    fun wallpaperBehindHome() {
+        wallpaper = dusk()
+        show(apps.filterIndexed { i, _ -> i in listOf(0, 1, 4, 8, 11) })
+        shot("wallpaper_home")
+        press(listOf(Key.DirectionDown))
+        shot("wallpaper_scrolled")
+    }
+
+    @Test
+    fun wallpaperPanelSelects() {
+        wallpaper = dusk()
+        show(apps.take(2))
+        press(listOf(Key.DirectionUp))
+        repeat(6) { press(listOf(Key.DirectionRight)) }
+        press(listOf(Key.DirectionLeft, Key.DirectionCenter)) // Wallpaper sits left of Settings
+        captureScreenRoboImage("build/outputs/roborazzi/panel_wallpaper.png")
+        press(listOf(Key.DirectionRight, Key.DirectionCenter))
+        assertEquals(WallpaperChoice.Teal, wallpaper.choice)
     }
 }
