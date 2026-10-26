@@ -89,6 +89,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.graphics.RectangleShape
@@ -194,6 +196,7 @@ private const val TILE_H = 176
 private const val FOCUSED_W = 360
 private const val FOCUSED_SCALE = FOCUSED_W.toFloat() / 312f
 private const val TILE_GAP = 24
+private const val LABEL_DROP = 12 // extra room under a focused tile before its name
 
 /** Transient home-screen state: which tile has its menu open, is being moved, or should take focus. */
 @Stable
@@ -204,6 +207,7 @@ private class HomeUi {
     var voiceQuery by mutableStateOf<String?>(null)
     var arranging by mutableStateOf<ComponentName?>(null)
     var pendingFocus by mutableStateOf<ComponentName?>(null)
+    var topBarHidden by mutableStateOf(false)
     /** The tile focus was last on, for coming back down from the top bar. Not state: nothing redraws on it. */
     var lastTile: FocusRequester? = null
     var toast by mutableStateOf<Int?>(null)
@@ -237,7 +241,8 @@ fun HomeScreen(
         val p = (scrollY() / FADE_DISTANCE).coerceIn(0f, 1f)
         1f - p * p * (3 - 2 * p)
     }
-    val topBarHidden = rememberTopBarHidden(scroll, designPx)
+    ShowTopBarAtTop(scroll, ui)
+    val topBarHidden = ui.topBarHidden
     val firstTile = remember { FocusRequester() }
     val firstRowWithApps = rows.indexOfFirst { it.apps.isNotEmpty() }
     val favorites = rows.first { it.key == RowKey.Favorites }.apps.map { it.component }
@@ -415,6 +420,7 @@ private fun RowsViewport(
     firstTile: FocusRequester,
     firstRowWithApps: Int,
 ) {
+    val designPx = with(LocalDensity.current) { 1.px.toPx() }
     val scope = rememberCoroutineScope()
     val rowTops = remember { HashMap<RowKey, Int>() }
     val rowSpec = with(LocalDensity.current) { remember(this) { EdgePaddingSpec(SIDE.px.toPx()) } }
@@ -442,6 +448,11 @@ private fun RowsViewport(
                         firstTile = if (index == firstRowWithApps) firstTile else null,
                         onFocused = {
                             rowTops[row.key]?.let { top ->
+                                // Decided from where the page is before it scrolls (design changelog 9c):
+                                // down hides the bar; up shows it only if Favorites' title is already clear of it.
+                                val nowY = scroll.value / designPx
+                                if (top > scroll.value + 1) ui.topBarHidden = true
+                                else if (top < scroll.value - 1 && FIRST_ROW_TOP - nowY >= TOP_BAR_BOTTOM) ui.topBarHidden = false
                                 scope.launch { scroll.animateScrollTo(top, tween(280, easing = FastOutSlowInEasing)) }
                             }
                         },
@@ -666,7 +677,7 @@ private fun AppTile(
                     AppMenu(app.label, isFavorite, onMenuAction, onDismiss = { ui.menuFor = null })
                 }
             }
-            TileLabel(app.label, focused)
+            TileLabel(app.label, focused, scale = { scale }, origin = origin)
         }
         // 44 px outside the tile's resting edges, centred on it, as designed.
         if (arranging) {
@@ -723,7 +734,7 @@ internal fun TileImage(app: AppEntry, images: AppImageSource) {
  * scrolls back and forth, fading at both edges.
  */
 @Composable
-private fun TileLabel(text: String, focused: Boolean) {
+private fun TileLabel(text: String, focused: Boolean, scale: () -> Float, origin: TransformOrigin) {
     var overflows by remember(text) { mutableStateOf(false) }
     val alpha by animateFloatAsState(if (focused) 1f else 0f, tween(160), label = "label")
     Text(
@@ -737,7 +748,16 @@ private fun TileLabel(text: String, focused: Boolean) {
         // A marquee measures unbounded, so overflow is only meaningful while not scrolling.
         onTextLayout = { if (!focused) overflows = it.hasVisualOverflow },
         modifier = Modifier
-            .fillMaxWidth()
+            // As wide as the scaled tile and growing from the same origin, so the name stays centred
+            // under it (the first tile grows rightwards); 12 px lower so the grown tile and its ring
+            // keep clear of it. Takes the resting width in layout, so nothing else moves.
+            .layout { measurable, constraints ->
+                val s = scale()
+                val width = (TILE_W * s).px.roundToPx()
+                val placeable = measurable.measure(Constraints.fixedWidth(width))
+                val x = (origin.pivotFractionX * TILE_W * (1f - s)).px.roundToPx()
+                layout(constraints.maxWidth, placeable.height) { placeable.place(x, LABEL_DROP.px.roundToPx()) }
+            }
             .graphicsLayer { this.alpha = alpha }
             .then(
                 if (overflows && focused) {
@@ -827,27 +847,13 @@ private fun BottomEdge() {
     }
 }
 
-/**
- * Top bar visibility (design changelog 9c): hidden while scrolling down; shown at once when
- * scrolling back up, but only if the Favorites title is on screen below the bar; always shown at
- * the top of the page.
- */
+/** At the top of the page the top bar always shows, however the page got there. */
 @Composable
-private fun rememberTopBarHidden(scroll: ScrollState, designPx: Float): Boolean {
-    var hidden by remember { mutableStateOf(false) }
+private fun ShowTopBarAtTop(scroll: ScrollState, ui: HomeUi) {
+    val designPx = with(LocalDensity.current) { 1.px.toPx() }
     LaunchedEffect(scroll, designPx) {
-        var last = 0f
-        snapshotFlow { scroll.value / designPx }.collect { y ->
-            hidden = when {
-                y <= 4f -> false
-                y < last - 1f -> if (FIRST_ROW_TOP - y >= TOP_BAR_BOTTOM) false else hidden
-                y > last + 1f -> true
-                else -> hidden
-            }
-            last = y
-        }
+        snapshotFlow { scroll.value / designPx <= 4f }.collect { atTop -> if (atTop) ui.topBarHidden = false }
     }
-    return hidden
 }
 
 /**

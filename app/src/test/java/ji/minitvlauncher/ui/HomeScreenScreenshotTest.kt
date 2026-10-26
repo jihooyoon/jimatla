@@ -434,7 +434,7 @@ class HomeScreenScreenshotTest {
 
     private fun topBarTop() = compose.onNode(androidx.compose.ui.test.hasContentDescription("Bluetooth và phụ kiện")).fetchSemanticsNode().boundsInRoot.top
 
-    /** Design changelog 9c: hides scrolling down; scrolling up shows it only while Favorites is clear of it. */
+    /** Design changelog 9c: hides scrolling down; scrolling up shows it only if, before the scroll, Favorites is clear of it. */
     @Test
     fun topBarHidesOnScrollDownAndReturns() {
         show(apps.take(3)) // rows: Favorites, Apps, Games
@@ -443,9 +443,11 @@ class HomeScreenScreenshotTest {
         assertTrue("hidden at ${topBarTop()}", topBarTop() < 0f)
         press(listOf(Key.DirectionDown)) // Games row: further down, still hidden
         assertTrue(topBarTop() < 0f)
-        press(listOf(Key.DirectionUp)) // back to Apps: Favorites' title is 158 px from the top, clear of the bar
-        assertEquals(64f, topBarTop(), 1f)
-        press(listOf(Key.DirectionUp)) // top of the page
+        // Back up to Apps: before scrolling, Favorites' title is off screen, so the bar stays hidden
+        // (it would only be clear of the bar once the scroll had happened).
+        press(listOf(Key.DirectionUp))
+        assertTrue("shown too early at ${topBarTop()}", topBarTop() < 0f)
+        press(listOf(Key.DirectionUp)) // to Favorites: at Apps its title sits clear of the bar → show
         assertEquals(64f, topBarTop(), 1f)
     }
 
