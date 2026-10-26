@@ -11,6 +11,10 @@ TV khởi động → launcher cũ hiện thoáng qua → vào recovery: "Can't 
 - Nghi vấn (chưa xác minh): `tvlauncher` hoặc tiến trình đi kèm crash do thiếu gói đã gỡ, ví dụ `com.realtek.vsmleanbacklauncher.vsmpartnercustomizer` (tuỳ biến của hãng cho launcher) hoặc `com.google.android.tungsten.setupwraith`.
 - Factory reset sẽ khôi phục mọi gói hệ thống đã gỡ (chúng vẫn nằm trong /system, chỉ bị gỡ cho user 0); mất app tự cài, đăng nhập, cài đặt.
 - BÀI HỌC: sau mỗi lần gỡ/tắt gói hệ thống phải `adb reboot` và kiểm tra TV lên bình thường rồi mới làm tiếp.
+- **ĐÃ GIẢI QUYẾT (26/10):** log xác nhận: `com.realtek.keyintercept` (persistent) crash vì không có provider `tvlauncher.widget`, provider này thuộc `com.realtek.vsmleanbacklauncher.vsmpartnercustomizer/.ConfigurationProvider`. Bắt adb trong lúc khởi động (script lặp `adb connect` 0,5 s), `install-existing` cả 13 gói → TV khởi động lại bình thường. Sau đó (người dùng đồng ý) gỡ lại 12 gói, GIỮ `vsmpartnercustomizer`, `adb reboot` có script canh: 3 phút sau khi lên 0 crash, `keyintercept` ổn định, Home = tvlauncher.
+- `vsmpartnercustomizer` → đưa vào danh sách KHÔNG ĐỤNG. Launcher mới cũng phải để gói này cài sẵn.
+- Rescue Party đã chạy mức RESET_SETTINGS_UNTRUSTED_DEFAULTS (đặt lại cài đặt do app không phải hệ thống ghi) — có thể vài tuỳ chỉnh đã về mặc định. Appops chặn chạy nền TV360/Spotify vẫn còn (đã kiểm tra).
+- Cách cứu hộ nếu tái diễn: script trong lịch sử phiên — vòng lặp `adb connect` + `adb get-state`, bắt được thì đọc `logcat -b crash -d` rồi `cmd package install-existing`.
 
 ## Trạng thái (26/10, cuối ngày)
 Đã code xong 7 bước theo thiết kế, mỗi bước test trên máy tính (Robolectric + ảnh chụp Roborazzi) rồi commit + push lên `main`. **CHƯA thử bất kỳ bước nào trên TV thật** — TV đang tắt, launcher cũ đang là màn Home, `ji.minitvlauncher` đã gỡ khỏi TV.
@@ -89,7 +93,7 @@ Trước khi code: đọc kỹ `docs/dev/design/Main.dc.html` + 3 ghi chú trong
 ## TV
 - Vsmart VinaTV 4K TR2001, chip Realtek, Android TV 9, RAM 2 GB. adb: `adb connect 192.168.<x>.179:5555` (IP mạng nội bộ chỉ ghi số cuối; hỏi người dùng hoặc xem router cho phần còn lại).
 - Vsmart đã phá sản: không OTA, không firmware để cứu → chỉ dùng thao tác đảo ngược được (`pm uninstall -k --user 0`, `disable-user`, appops). Cài lại: `adb shell cmd package install-existing <pkg>`.
-- KHÔNG đụng: `com.realtek.*`, `com.android.tv`, `com.android.tv.settings`, `com.vsm.factorymenu`, gms/gsf/vending, webview, systemui, RtkTvSetupWizard/RtkTvSetupCustomizer.
+- KHÔNG đụng: `com.realtek.*` (kể cả `com.realtek.vsmleanbacklauncher.vsmpartnercustomizer` — gỡ nó làm TV không khởi động được), `com.android.tv`, `com.android.tv.settings`, `com.vsm.factorymenu`, gms/gsf/vending, webview, systemui, RtkTvSetupWizard/RtkTvSetupCustomizer.
 - `com.google.android.leanbacklauncher` trên TV này là **stub** (không có HOME activity) → không dùng làm launcher dự phòng được.
 
 ### Đã làm (26/10)
