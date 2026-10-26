@@ -51,6 +51,11 @@ Trước khi code: đọc kỹ `docs/dev/design/Main.dc.html` + 3 ghi chú trong
    - Bài học: trong Popup phải lấy `LocalFocusManager` BÊN TRONG nội dung Popup, lấy bên ngoài là focus manager của cửa sổ chính.
 7. ~~Ngôn ngữ~~ — XONG 26/10: theo ngôn ngữ hệ thống, chưa có bản dịch → tiếng Anh (cơ chế tài nguyên Android, `values/` = tiếng Anh đầy đủ, `values-vi/`). Không có chọn ngôn ngữ trong app. Lint sạch lỗi (`MissingTranslation`: các chuỗi không cần dịch đánh `translatable="false"`). Có test tiếng Pháp → hiện tiếng Anh, ngày theo tiếng Pháp. Thêm nhãn TalkBack cho ô app và nút tròn. Thêm tiếng mới: tạo `values-xx/strings.xml`.
 
+### Đo tài nguyên (26/10, `dumpsys procstats --hours 24` + `dumpsys meminfo`, TV vừa khởi động lại)
+- Chạy thường trực, nặng nhất: gms ~106 MB, tvlauncher ~92 MB (TB 24 h 106 MB), katniss (Assistant) interactor+search ~120 MB, Play Store 3 tiến trình ~97 MB (vending, :background, :instant_app_installer), bàn phím ~35 MB, mediashell (Chromecast) ~27 MB, tvrecommendations ~23 MB.
+- App bên thứ ba: iQIYI ~266 MB nhưng chỉ khi đang mở (trạng thái Top) → bình thường. Spotify ~20 MB ở trạng thái "Imp Fg" 71 % thời gian (dịch vụ tiền cảnh, appops chặn nền KHÔNG chặn được loại này; có thể do đang phát nhạc thật). TV360 sau khi chặn: chỉ còn cache 0,4 % → gần như 0. Không có số liệu TV360 trước khi chặn nên không kết luận được nó tệ hơn app khác.
+- `ji.minitvlauncher` (bản thử 25/10): TB ~43 MB, đỉnh 72 MB — so với tvlauncher ~106 MB.
+
 ### Thao tác riêng trên TV (không thuộc kế hoạch code)
 - Bỏ `tvlauncher` và `tvrecommendations`: chỉ làm khi người dùng yêu cầu và xác nhận rõ ràng ngay lúc đó; đề nghị trước đó không tính.
 - Cách làm: ưu tiên **disable** (`adb shell pm disable-user --user 0 <pkg>`), KHÔNG gỡ hẳn. App bị disable không chạy, không chiếm RAM, chỉ chiếm bộ nhớ lưu trữ; bật lại bằng `pm enable <pkg>`.
