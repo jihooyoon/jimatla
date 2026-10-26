@@ -91,6 +91,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.zIndex
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.tv.material3.Border
@@ -186,10 +187,12 @@ internal const val SIDE = 120
 // 120 px right edge (120 + 5×312 + 4×24 = 1776 ≤ 1800), so only the sixth scrolls the row.
 private const val TILE_W = 312
 private const val TILE_H = 176
-// The focused tile scales up in place (design changelog 9a) without moving anything. At 1.15 it
-// grows 23.4 px each side, just meeting its neighbours across the 24 px gaps; a row's first tile
-// grows from its left edge to keep the x = 120 margin, overlapping the second (user accepted).
-private const val FOCUSED_SCALE = 1.15f
+// The focused tile scales up in place (design changelog 9a) without moving anything, to 360 px
+// wide (×1.154): 24 px more each side, exactly meeting its neighbours across the 24 px gaps. A
+// row's first tile grows from its left edge to keep the x = 120 margin, overlapping the second
+// (user accepted). Uniform scale, so the height is 203.1 and pictures don't stretch.
+private const val FOCUSED_W = 360
+private const val FOCUSED_SCALE = FOCUSED_W.toFloat() / 312f
 private const val TILE_GAP = 24
 
 /** Transient home-screen state: which tile has its menu open, is being moved, or should take focus. */
@@ -587,11 +590,11 @@ private fun AppTile(
     val focused by interaction.collectIsFocusedAsState()
     val focus = remember { FocusRequester() }
     val bringIntoView = remember { BringIntoViewRequester() }
-    val shape = RoundedCornerShape(TILE_RADIUS.px)
     val fill = app.appCategory.fill
     val arranging = ui.arranging == app.component
     val dimmed = ui.arranging != null && !arranging
     val scale by animateFloatAsState(if (focused || arranging) FOCUSED_SCALE else 1f, tween(180), label = "scale")
+    val origin = if (index == 0) TransformOrigin(0f, 0.5f) else TransformOrigin.Center
 
     LaunchedEffect(ui.pendingFocus) {
         if (ui.pendingFocus == app.component) {
@@ -614,12 +617,16 @@ private fun AppTile(
                 onLongClick = { if (ui.arranging == null) ui.menuFor = app.component },
                 modifier = Modifier
                     .size(TILE_W.px, TILE_H.px)
+                    // Outside the scaling layer: the ring stays a crisp 4 px around the scaled tile.
+                    .focusRing(focused, scale = { scale }, origin = origin)
                     .graphicsLayer {
                         scaleX = scale
                         scaleY = scale
-                        transformOrigin = if (index == 0) TransformOrigin(0f, 0.5f) else TransformOrigin.Center
+                        transformOrigin = origin
+                        // Corners stay 16 px on screen however large the tile is drawn (changelog 4).
+                        this.shape = RoundedCornerShape((TILE_RADIUS / scale).px)
+                        clip = true
                     }
-                    .focusRing(focused)
                     .semantics { contentDescription = app.label }
                     .focusRequester(focus)
                     .then(if (extraFocus != null) Modifier.focusRequester(extraFocus) else Modifier)
@@ -649,7 +656,7 @@ private fun AppTile(
                         }
                     },
                 interactionSource = interaction,
-                shape = CardDefaults.shape(shape),
+                shape = CardDefaults.shape(RectangleShape), // rounded by the layer above
                 colors = CardDefaults.colors(containerColor = fill, focusedContainerColor = fill),
                 scale = CardDefaults.scale(focusedScale = 1f),
                 border = CardDefaults.border(border = Border.None, focusedBorder = Border.None),

@@ -85,7 +85,7 @@ fun ImagePicker(images: List<Uri>, thumbnail: suspend (Uri) -> ImageBitmap?, onP
                         shape = ClickableSurfaceDefaults.shape(shape),
                         colors = ClickableSurfaceDefaults.colors(containerColor = Palette.Surface, focusedContainerColor = Palette.Surface),
                         interactionSource = interaction,
-                        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),
+                        scale = ClickableSurfaceDefaults.scale(focusedScale = 1f), // the focus ring marks it
                     ) {
                         Box(Modifier.fillMaxSize()) {
                             image?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }

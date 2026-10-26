@@ -119,7 +119,7 @@ private fun WallpaperThumb(
                 border = if (choice == WallpaperChoice.None) Border(BorderStroke(1.5.px, Palette.BorderStrong), shape = shape) else Border.None,
                 focusedBorder = if (choice == WallpaperChoice.None) Border(BorderStroke(1.5.px, Palette.BorderStrong), shape = shape) else Border.None,
             ),
-            scale = ClickableSurfaceDefaults.scale(focusedScale = 1.04f),
+            scale = ClickableSurfaceDefaults.scale(focusedScale = 1f), // the focus ring marks it
         ) {
             Box(Modifier.fillMaxSize()) {
                 image?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
