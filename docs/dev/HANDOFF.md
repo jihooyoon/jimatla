@@ -56,6 +56,11 @@ Trước khi code: đọc kỹ `docs/dev/design/Main.dc.html` + 3 ghi chú trong
 - App bên thứ ba: iQIYI ~266 MB nhưng chỉ khi đang mở (trạng thái Top) → bình thường. Spotify ~20 MB ở trạng thái "Imp Fg" 71 % thời gian (dịch vụ tiền cảnh, appops chặn nền KHÔNG chặn được loại này; có thể do đang phát nhạc thật). TV360 sau khi chặn: chỉ còn cache 0,4 % → gần như 0. Không có số liệu TV360 trước khi chặn nên không kết luận được nó tệ hơn app khác.
 - `ji.minitvlauncher` (bản thử 25/10): TB ~43 MB, đỉnh 72 MB — so với tvlauncher ~106 MB.
 
+### Đang chờ người dùng sửa thiết kế (Cowork) rồi mới code
+- Font: cân nhắc Google Sans Flex (OFL trên google/fonts, wght 1–1000, có tiếng Việt, 3,9 MB → cắt còn Latin+Việt, bỏ trục ROND/slnt/wdth). Google Sans thường chỉ wght 400–700 nên không đủ nét 300 cho đồng hồ. TV không có Google Sans hệ thống. Nếu đổi: tính lại `BASELINE_LIFT` trong `ui/Clock.kt` từ metrics font mới (đang theo Manrope 2132/600).
+- Chưa có Ưa thích thì không cuộn được lên đầu. Đề xuất: (1) khung trống Ưa thích thành ô focus được, OK → lưới chọn app thêm vào Ưa thích; (2) focus lên hàng nút trên cùng → cuộn về đầu. Người dùng sẽ thiết kế trước.
+- Launcher đã cài trên TV (chạy như app thường, chưa làm Home). Chưa tắt tvlauncher, chưa cấp quyền đọc thông báo — chờ người dùng đồng ý.
+
 ### Thao tác riêng trên TV (không thuộc kế hoạch code)
 - Bỏ `tvlauncher` và `tvrecommendations`: chỉ làm khi người dùng yêu cầu và xác nhận rõ ràng ngay lúc đó; đề nghị trước đó không tính.
 - Cách làm: ưu tiên **disable** (`adb shell pm disable-user --user 0 <pkg>`), KHÔNG gỡ hẳn. App bị disable không chạy, không chiếm RAM, chỉ chiếm bộ nhớ lưu trữ; bật lại bằng `pm enable <pkg>`.
