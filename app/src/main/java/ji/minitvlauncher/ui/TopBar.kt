@@ -1,5 +1,7 @@
 package ji.minitvlauncher.ui
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -13,24 +15,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.layout.layout
-import androidx.compose.ui.layout.onPlaced
-import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -46,7 +42,6 @@ import ji.minitvlauncher.system.NetKind
 import ji.minitvlauncher.system.NetStatus
 import ji.minitvlauncher.ui.theme.appFont
 import ji.minitvlauncher.ui.theme.Palette
-import ji.minitvlauncher.ui.theme.Type
 import ji.minitvlauncher.ui.theme.px
 import ji.minitvlauncher.ui.theme.tx
 
@@ -64,7 +59,7 @@ data class TopButton(
 
 /** Right-aligned row of round buttons; the focused one shows its label underneath (see [WithTooltip]). */
 @Composable
-fun TopBar(buttons: List<TopButton>, modifier: Modifier = Modifier) {
+fun TopBar(buttons: List<TopButton>, hidden: Boolean = false, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().padding(top = 64.px, end = SIDE.px), contentAlignment = Alignment.TopEnd) {
         Row(horizontalArrangement = Arrangement.spacedBy(20.px)) {
             buttons.forEach { b ->
@@ -74,7 +69,7 @@ fun TopBar(buttons: List<TopButton>, modifier: Modifier = Modifier) {
                     val interaction = remember { MutableInteractionSource() }
                     val focused by interaction.collectIsFocusedAsState()
                     WithTooltip(if (focused) b.label else null) {
-                        RoundButton(b, interaction)
+                        RoundButton(b, interaction, hidden)
                     }
                 }
             }
@@ -85,12 +80,13 @@ fun TopBar(buttons: List<TopButton>, modifier: Modifier = Modifier) {
 private val Badge = TextStyle(fontFamily = appFont(15), fontSize = 15.tx, fontWeight = FontWeight.SemiBold)
 
 @Composable
-private fun RoundButton(b: TopButton, interaction: MutableInteractionSource) {
+private fun RoundButton(b: TopButton, interaction: MutableInteractionSource, hidden: Boolean) {
     Box {
         Surface(
             onClick = b.onClick,
             interactionSource = interaction,
-            modifier = Modifier.size(64.px).semantics { contentDescription = b.label },
+            // A hidden bar takes no focus, so the remote can't land on an invisible button.
+            modifier = Modifier.size(64.px).focusProperties { canFocus = !hidden }.semantics { contentDescription = b.label },
             shape = ClickableSurfaceDefaults.shape(CircleShape),
             colors = ClickableSurfaceDefaults.colors(
                 containerColor = LocalBackdrop.current.copy(alpha = 0.55f),

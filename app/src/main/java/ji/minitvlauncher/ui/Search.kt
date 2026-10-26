@@ -1,5 +1,7 @@
 package ji.minitvlauncher.ui
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,16 +28,15 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -90,12 +91,12 @@ private val ResultTitle = TextStyle(fontFamily = appFont(26), fontSize = 26.tx, 
 private val NoResults = TextStyle(fontFamily = appFont(30), fontSize = 30.tx)
 private val ResultLabel = TextStyle(fontFamily = appFont(22), fontSize = 22.tx, fontWeight = FontWeight.Medium)
 
-/** The "Search" pill at the top left; the home screen slides it beside the shrunken clock. */
+/** The "Search" pill at the top left, part of the top bar that hides while scrolling down. */
 @Composable
-fun SearchPill(onClick: () -> Unit, modifier: Modifier) {
+fun SearchPill(onClick: () -> Unit, hidden: Boolean, modifier: Modifier) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(64.px),
+        modifier = modifier.height(64.px).focusProperties { canFocus = !hidden },
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(32.px)),
         colors = ClickableSurfaceDefaults.colors(
             containerColor = LocalBackdrop.current.copy(alpha = 0.55f),

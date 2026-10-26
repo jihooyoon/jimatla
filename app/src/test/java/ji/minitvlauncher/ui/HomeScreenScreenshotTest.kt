@@ -431,4 +431,21 @@ class HomeScreenScreenshotTest {
         assertTrue("left ${mic.left - 16f}", mic.left - 16f >= 48f - 0.5f)
         captureScreenRoboImage("build/outputs/roborazzi/search_tooltip.png")
     }
+
+    private fun topBarTop() = compose.onNode(androidx.compose.ui.test.hasContentDescription("Bluetooth và phụ kiện")).fetchSemanticsNode().boundsInRoot.top
+
+    /** Design changelog 9c: hides scrolling down; scrolling up shows it only while Favorites is clear of it. */
+    @Test
+    fun topBarHidesOnScrollDownAndReturns() {
+        show(apps.take(3)) // rows: Favorites, Apps, Games
+        assertEquals(64f, topBarTop(), 1f)
+        press(listOf(Key.DirectionDown)) // Apps row: scrolled down
+        assertTrue("hidden at ${topBarTop()}", topBarTop() < 0f)
+        press(listOf(Key.DirectionDown)) // Games row: further down, still hidden
+        assertTrue(topBarTop() < 0f)
+        press(listOf(Key.DirectionUp)) // back to Apps: Favorites' title is 158 px from the top, clear of the bar
+        assertEquals(64f, topBarTop(), 1f)
+        press(listOf(Key.DirectionUp)) // top of the page
+        assertEquals(64f, topBarTop(), 1f)
+    }
 }

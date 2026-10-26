@@ -13,7 +13,7 @@
 <style>
 body{margin:0}
 a{color:#E8E6E1}a:hover{color:#FFFFFF}
-@keyframes tvMarquee{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(calc(-100% + 346px))}}
+@keyframes tvMarquee{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(calc(-100% + 320px))}}
 @keyframes tvPanelIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
 @keyframes tvLaunch{from{transform:scale(0.2);opacity:0;border-radius:24px}to{transform:none;opacity:1;border-radius:0}}
 @keyframes tvPop{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}
@@ -55,8 +55,8 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
    </div>
   </div>
 
-  <div data-vp="1" class="tv-noscroll" onScroll="{{onVpScroll}}" style="position: absolute; top: 160px; bottom: 0; left: 0; right: 0; overflow-x: hidden; overflow-y: auto; scroll-behavior: smooth; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 72px, #000 calc(100% - 64px), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 72px, #000 calc(100% - 64px), transparent 100%)">
-    <div style="display: flex; flex-direction: column; gap: {{rowGap}}px; padding: 370px 0 360px">
+  <div data-vp="1" class="tv-noscroll" onScroll="{{onVpScroll}}" style="position: absolute; top: 0; bottom: 0; left: 0; right: 0; overflow-x: hidden; overflow-y: auto; scroll-behavior: smooth; -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 64px), transparent 100%); mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 64px), transparent 100%)">
+    <div style="display: flex; flex-direction: column; gap: {{rowGap}}px; padding: 530px 0 360px">
       <sc-for list="{{rows}}" as="row" hint-placeholder-count="4">
         <section data-row="1" aria-label="{{row.title}}" style="display: flex; flex-direction: column; gap: 4px">
           <div style="display: flex; align-items: baseline; gap: 20px; padding: 0 120px">
@@ -121,7 +121,7 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
     </button>
   </div>
 
-  <header style="position: absolute; top: 64px; right: 120px; display: flex; align-items: center; z-index: 2">
+  <header style="{{headerStyle}}">
     <div style="display: flex; align-items: center; gap: 20px">
 
       <div style="position: relative; display: flex; justify-content: center">
@@ -579,7 +579,7 @@ class Component extends DCLogic {
     // Căn quang học: đo khoảng trống bên trái nét chữ (side bearing) của đồng hồ và dòng ngày bằng font metrics
     try {
       var cx = document.createElement('canvas').getContext('2d');
-      cx.font = '300 128px "Google Sans Flex"';
+      cx.font = '400 128px "Google Sans Flex"';
       var cb = -cx.measureText('20:45').actualBoundingBoxLeft / 128;
       cx.font = '400 28px "Google Sans Flex"';
       var db = -cx.measureText('Thứ Năm').actualBoundingBoxLeft;
@@ -607,10 +607,10 @@ class Component extends DCLogic {
     var vp = tile.closest('[data-vp]');
     var strip = tile.closest('[data-strip]');
     var wrap = tile.parentElement;
-    if (row && vp) vp.scrollTop = Math.max(0, row.offsetTop - 370);
+    if (row && vp) vp.scrollTop = Math.max(0, row.offsetTop - 530);
     if (strip && wrap) {
       var pad = 120;
-      var left = wrap.offsetLeft, right = left + 346;
+      var left = wrap.offsetLeft, right = left + 320;
       if (left - pad < strip.scrollLeft) strip.scrollLeft = left - pad;
       else if (right + pad > strip.scrollLeft + strip.clientWidth) strip.scrollLeft = right + pad - strip.clientWidth;
     }
@@ -769,6 +769,16 @@ class Component extends DCLogic {
     var ta = function (al) { return 'rgba(' + tRGB + ',' + al + ')'; };
     var eHP = st.hp * st.hp * (3 - 2 * st.hp);
     var glassBg = ta(0.55);
+    var gEaseC = function (t) { return t * t * (3 - 2 * t); };
+    // Ẩn/hiện thanh trên: trượt lên 160px + mờ dần, chạy animation riêng
+    // Cụm đồng hồ + ngày + thời tiết: trôi lên CÙNG nội dung (bám vị trí cuộn) và mờ dần trong 220px đầu
+    var syv = st.sy || 0;
+    var cOp = 1 - gEaseC(Math.min(1, syv / 220));
+    var clusterMove = 'transform: translateY(' + (-syv).toFixed(1) + 'px); opacity: ' + cOp.toFixed(3) + ';' + (cOp < 0.02 ? ' visibility: hidden;' : '');
+    var topHide = function (h) {
+      // visibility trễ theo animation ẩn → khi ẩn hẳn thì nút rời khỏi thứ tự focus (D-pad/Tab không rơi vào nút vô hình)
+      return (h ? 'visibility: hidden; transition: transform 280ms cubic-bezier(.4,0,.2,1), opacity 200ms ease, visibility 0s linear 280ms;' : 'visibility: visible; transition: transform 200ms cubic-bezier(0,0,.2,1), opacity 160ms ease, visibility 0s;') + ' transform: translateY(' + (h ? -160 : 0) + 'px); opacity: ' + (h ? 0 : 1) + ';' + (h ? ' pointer-events: none;' : '');
+    };
     // Dải chuyển màu theo đường cong smoothstep, 13 mốc để không lộ bậc
     var gEase = function (t) { return t * t * (3 - 2 * t); };
     var grad = function (dir, p0, p1, a0, a1) {
@@ -862,14 +872,13 @@ class Component extends DCLogic {
         var sel = st.focus === id;
         var isArr = arr === id;
         if (sel) focusIdx = idx;
-        // Tile đang chọn phóng to ~1.08: chiều dọc nở đều lên/xuống (margin âm, không đẩy nhãn),
-        // chiều ngang nở sang phải và đẩy các tile phía sau, giữ nguyên khoảng cách 32px giữa các tile
-        var w = sel ? 346 : 320;
-        var h = sel ? 194 : 180;
+        // Tile đang chọn phóng to 1.08 bằng transform quanh tâm: không đẩy tile bên cạnh, không đẩy nhãn
+        var w = 320;
+        var h = 180;
         var textW = over[id] || 0;
         var long = textW > 0;
         var mask = !long ? 'none' : (sel ? fadeBoth : fadeEnd);
-        var dur = long ? Math.max(3, ((textW - 346 + 28) / speed) / 0.76) : 0;
+        var dur = long ? Math.max(3, ((textW - 320 + 28) / speed) / 0.76) : 0;
         var dim = arr && !isArr;
         return {
           id: id,
@@ -941,11 +950,11 @@ class Component extends DCLogic {
           },
           wrapStyle: 'position: relative; flex: none; transition: opacity 160ms ease; ' + (dim ? 'filter: brightness(0.4) saturate(0.6);' : '') + (isArr ? ' z-index: 2;' : (sel ? ' z-index: 1;' : '')),
           colStyle: 'flex: none; display: flex; flex-direction: column; gap: 18px; align-items: flex-start; width: ' + w + 'px; padding: 0; margin: 0; border: none; background: transparent; cursor: pointer; font-family: inherit; color: inherit; outline: none; touch-action: manipulation; -webkit-touch-callout: none; transition: width 180ms ease;',
-          tileStyle: 'display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: ' + w + 'px; height: ' + h + 'px; border-radius: 16px; background: ' + fillOf[String(a.cat)] + '; margin: ' + (sel ? '-7px 0' : '0') + '; transition: width 180ms ease, height 180ms ease, margin 180ms ease, box-shadow 180ms ease; ' + (isArr
+          tileStyle: 'display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: ' + w + 'px; height: ' + h + 'px; border-radius: 16px; background: ' + fillOf[String(a.cat)] + '; transform-origin: ' + (idx === 0 ? '0% 50%' : '50% 50%') + '; transform: ' + ((sel || isArr) ? 'scale(1.08)' : 'none') + '; transition: transform 180ms ease, box-shadow 180ms ease; ' + (isArr
             ? 'box-shadow: 0 0 0 4px #F4F2EE, 0 0 0 10px rgba(244,242,238,0.25), 0 20px 40px rgba(0,0,0,0.5);'
             : sel ? 'box-shadow: 0 0 0 4px #F4F2EE, 0 20px 40px rgba(0,0,0,0.5);'
             : ''),
-          labelOuter: 'display: block; height: 32px; line-height: 32px; width: ' + w + 'px; overflow: hidden; white-space: nowrap; text-align: left; -webkit-mask-image: ' + mask + '; mask-image: ' + mask + ';',
+          labelOuter: 'display: block; height: 32px; line-height: 32px; width: ' + w + 'px; overflow: hidden; white-space: nowrap; text-align: ' + (long ? 'left' : 'center') + '; opacity: ' + (sel ? 1 : 0) + '; transition: opacity 160ms ease; -webkit-mask-image: ' + mask + '; mask-image: ' + mask + ';',
           labelInner: 'display: inline-block; white-space: nowrap; font-size: 24px; font-weight: 500; ' + (sel ? 'color: #F4F2EE;' : 'color: #9A9892;') + (sel && long
             ? ' padding-right: 28px; animation: tvMarquee ' + dur.toFixed(1) + 's ease-in-out 0.4s infinite alternate;'
             : '')
@@ -1045,7 +1054,7 @@ class Component extends DCLogic {
         });
         return o;
       })(),
-      wallLayer: 'position: absolute; inset: 0; pointer-events: none; opacity: ' + (wk === 'none' ? 0 : (1 - eHP)).toFixed(3) + ';',
+      wallLayer: 'position: absolute; inset: 0; pointer-events: none; opacity: ' + (wk === 'none' ? 0 : cOp).toFixed(3) + ';',
       // Lớp phủ trong khung (toạ độ tính từ mép khung): mép trái và mép dưới đều là 100% màu nền, nên ra ngoài khung không có đường nối
       // Khung bắt đầu ngay bên phải đồng hồ to (x=480) và xuống tới khoảng 2/3 tile hàng Ưa thích (y≈720).
       // Trái: 100% → 0% trong 720px. Dưới: 0% ở y=240 → 100% ở y=750 (khung cao 760).
@@ -1068,25 +1077,41 @@ class Component extends DCLogic {
       // Tile đang chọn phóng to bằng transform nên không đổi chiều cao hàng → khoảng cách giữa các section = 72.
       rowGap: 530 - (232 + 128 + 14 + 36 + 14 + 34),
       onVpScroll: function (e) {
-        var t = e.currentTarget.scrollTop;
-        var p = Math.round(Math.min(1, Math.max(0, t / 220)) * 100) / 100;
-        if (p === self.state.hp) return;
-        if (self.raf) cancelAnimationFrame(self.raf);
-        self.raf = requestAnimationFrame(function () { self.setState({ hp: p }); });
+        // Thanh trên + cụm đồng hồ + ảnh nền: vừa nhận cuộn (rời khỏi đầu trang) là ẩn bằng animation riêng,
+        // không bám theo vị trí cuộn; về lại đầu trang thì hiện lại
+        var sy = e.currentTarget.scrollTop;
+        // Theo hướng cuộn: cuộn xuống → ẩn; vừa có cuộn ngược lên → hiện ngay, không đợi về đầu trang
+        var last = self.lastSy || 0;
+        var hidden = !!self.state.topHidden;
+        if (sy <= 4) hidden = false;
+        else if (sy < last - 1) {
+          // Cuộn lên chỉ làm hiện thanh trên khi tiêu đề “Ưa thích” đang hiện trên màn hình
+          // và cách mép trên ít nhất bằng đáy thanh trên (top 64 + cao 64 = 128px), tức không bị thanh trên che
+          var TOPBAR_BOTTOM = 128;
+          var fr = e.currentTarget.querySelector('[data-row]');
+          var favTitleY = (fr ? fr.offsetTop : 530) - sy;
+          if (favTitleY >= TOPBAR_BOTTOM) hidden = false;
+        }
+        else if (sy > last + 1) hidden = true;
+        self.lastSy = sy;
+        if (hidden !== !!self.state.topHidden) self.setState({ topHidden: hidden, hover: hidden ? null : self.state.hover });
+        if (self.rafSy) cancelAnimationFrame(self.rafSy);
+        self.rafSy = requestAnimationFrame(function () { if (self.state.sy !== sy) self.setState({ sy: sy }); });
       },
+      headerStyle: 'position: absolute; top: 64px; right: 120px; display: flex; align-items: center; z-index: 2; ' + topHide(st.topHidden),
       clockStyle: (function () {
         var e = st.hp * st.hp * (3 - 2 * st.hp);
         var L = function (a, b) { return a + (b - a) * e; };
         var fsz = L(128, 44);
         // Dịch trái đúng bằng khoảng trống bên trái của số (tỉ lệ theo cỡ chữ), rồi cộng lại khoảng trống của dòng ngày khi ngày còn hiện
         var cLeft = 120 - st.clockBear * fsz + st.dateBear * (1 - e);
-        return 'position: absolute; left: ' + cLeft.toFixed(1) + 'px; top: ' + L(232, 74).toFixed(1) + 'px; z-index: 2; font-size: ' + L(128, 44).toFixed(1) + 'px; font-weight: ' + Math.round(L(300, 600)) + '; letter-spacing: ' + L(-7, -1).toFixed(2) + 'px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none;';
+        return 'position: absolute; left: ' + cLeft.toFixed(1) + 'px; top: ' + L(232, 74).toFixed(1) + 'px; z-index: 2; font-size: ' + L(128, 44).toFixed(1) + 'px; font-weight: ' + Math.round(L(400, 600)) + '; letter-spacing: ' + L(-7, -1).toFixed(2) + 'px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none; ' + clusterMove;
       })(),
       dateStyle: (function () {
         var e = st.hp * st.hp * (3 - 2 * st.hp);
         var L = function (a, b) { return a + (b - a) * e; };
         var top = L(232, 74) + L(128, 44) + 14;
-        return 'position: absolute; left: 120px; top: ' + top.toFixed(1) + 'px; z-index: 2; font-size: 28px; line-height: 36px; color: #9A9892; white-space: nowrap; pointer-events: none; opacity: ' + Math.max(0, 1 - e * 2.2).toFixed(2) + '; transform: translateY(' + (-e * 16).toFixed(1) + 'px);';
+        return 'position: absolute; left: 120px; top: ' + top.toFixed(1) + 'px; z-index: 2; font-size: 28px; line-height: 36px; color: #9A9892; white-space: nowrap; pointer-events: none; ' + clusterMove;
       })(),
       dateHidden: st.hp > 0.45 ? 'true' : 'false',
       // Thời tiết: dữ liệu mẫu. fresh = vừa cập nhật; stale = mất mạng, hiện số liệu cũ; off = không có dữ liệu / tắt → ẩn
@@ -1096,12 +1121,12 @@ class Component extends DCLogic {
         var e = st.hp * st.hp * (3 - 2 * st.hp);
         var L = function (a, b) { return a + (b - a) * e; };
         var top = L(232, 74) + L(128, 44) + 14 + 50;
-        return 'position: absolute; left: 120px; top: ' + top.toFixed(1) + 'px; z-index: 2; height: 34px; display: flex; align-items: center; gap: 14px; font-size: 24px; color: #C9C7C1; white-space: nowrap; pointer-events: none; opacity: ' + Math.max(0, 1 - e * 2.6).toFixed(2) + '; transform: translateY(' + (-e * 20).toFixed(1) + 'px);';
+        return 'position: absolute; left: 120px; top: ' + top.toFixed(1) + 'px; z-index: 2; height: 34px; display: flex; align-items: center; gap: 14px; font-size: 24px; color: #C9C7C1; white-space: nowrap; pointer-events: none; ' + clusterMove;
       })(),
       pillWrap: (function () {
         var e = st.hp * st.hp * (3 - 2 * st.hp);
         var smallClockLeft = 120 - st.clockBear * 44;
-        return 'position: absolute; top: 64px; left: ' + (120 + (smallClockLeft - 120 + st.clockEm * 44 + 32) * e).toFixed(1) + 'px; z-index: 2;';
+        return 'position: absolute; top: 64px; left: ' + (120 + (smallClockLeft - 120 + st.clockEm * 44 + 32) * e).toFixed(1) + 'px; z-index: 2; ' + topHide(st.topHidden);
       })(),
 
       searchPill: 'display: flex; align-items: center; gap: 14px; height: 64px; box-sizing: border-box; padding: 0 32px 0 24px; border-radius: 32px; cursor: pointer; font-family: inherit; font-size: 24px; font-weight: 500; outline: none; transition: all 140ms ease; ' +

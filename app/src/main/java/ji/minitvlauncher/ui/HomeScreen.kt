@@ -1,5 +1,7 @@
 package ji.minitvlauncher.ui
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import android.content.ComponentName
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -44,14 +46,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -88,12 +88,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.ui.layout.layout
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.util.lerp
 import androidx.tv.material3.Border
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
@@ -177,16 +176,17 @@ data class SystemStatus(
 private enum class Panel { Inputs, Notifications, Wallpaper }
 
 // Layout from the design, in 1920×1080 design pixels.
-private const val VIEWPORT_TOP = 160
-private const val FIRST_ROW_TOP = 370 // inside the viewport; the focused row is scrolled here
-private const val COLLAPSE_DISTANCE = 220 // scroll over which the clock shrinks
+// The rows fill the screen from its top edge; the first row starts here and the focused row is
+// always scrolled to this spot.
+private const val FIRST_ROW_TOP = 530
+private const val FADE_DISTANCE = 220 // scroll over which the clock group and wallpaper fade out
+private const val TOP_BAR_BOTTOM = 64 + 64 // the bar's top + height
 internal const val SIDE = 120
 private const val TILE_W = 320
 private const val TILE_H = 180
-// The focused tile grows to 346×194: 7 px up and down around its middle without moving the
-// label, and 26 px to the right, pushing later tiles along so gaps stay 32 px.
-private const val FOCUSED_W = 346
-private const val FOCUSED_H = 194
+// The focused tile scales up 1.08 in place (design changelog 9a): it floats over the 32 px gaps
+// without moving anything; a row's first tile grows from its left edge to keep the x = 120 margin.
+private const val FOCUSED_SCALE = 1.08f
 
 /** Transient home-screen state: which tile has its menu open, is being moved, or should take focus. */
 @Stable
@@ -221,12 +221,14 @@ fun HomeScreen(
     val ui = remember { HomeUi() }
     val scroll = rememberScrollState()
     val density = LocalDensity.current
-    val collapseDistancePx = with(density) { COLLAPSE_DISTANCE.px.toPx() }
-    // Smoothstep of scroll progress; read only inside draw/layer blocks so scrolling never recomposes.
-    val collapse = {
-        val p = (scroll.value / collapseDistancePx).coerceIn(0f, 1f)
-        p * p * (3 - 2 * p)
+    val designPx = with(density) { 1.px.toPx() }
+    // Read only inside layer blocks, so scrolling never recomposes.
+    val scrollY = { scroll.value / designPx }
+    val fade = {
+        val p = (scrollY() / FADE_DISTANCE).coerceIn(0f, 1f)
+        1f - p * p * (3 - 2 * p)
     }
+    val topBarHidden = rememberTopBarHidden(scroll, designPx)
     val firstTile = remember { FocusRequester() }
     val firstRowWithApps = rows.indexOfFirst { it.apps.isNotEmpty() }
     val favorites = rows.first { it.key == RowKey.Favorites }.apps.map { it.component }
@@ -255,18 +257,18 @@ fun HomeScreen(
     val backdrop = Color(wallpaper.backdrop.color)
     CompositionLocalProvider(LocalBackdrop provides backdrop) {
     Box(Modifier.fillMaxSize().background(backdrop)) {
-        BackdropImage(wallpaper.backdrop.frame, collapse)
+        BackdropImage(wallpaper.backdrop.frame, fade)
+        Clock(scrollY, fade, now, weather)
         RowsViewport(rows, images, actions, ui, onMenuAction, onMove, scroll, firstTile, firstRowWithApps)
-        ViewportEdges(collapse)
-        Clock(collapse, now, weather)
-        val pillShift = with(density) { collapsedPillShift(now).px.toPx() }
-        SearchPill(
-            onClick = { ui.voiceQuery = null; ui.searching = true },
-            modifier = Modifier
-                .padding(start = SIDE.px, top = 64.px)
-                .graphicsLayer { translationX = pillShift * collapse() },
-        )
-        TopBar(topButtons(status, actions, ui))
+        BottomEdge()
+        TopBarMotion(topBarHidden) { motion ->
+            SearchPill(
+                onClick = { ui.voiceQuery = null; ui.searching = true },
+                hidden = topBarHidden,
+                modifier = Modifier.padding(start = SIDE.px, top = 64.px).then(motion),
+            )
+            TopBar(topButtons(status, actions, ui), hidden = topBarHidden, modifier = motion)
+        }
         if (ui.menuFor != null) Box(Modifier.fillMaxSize().background(Color(0x59050608)))
         if (ui.panel != null) Box(Modifier.fillMaxSize().background(ScrimColor))
         BottomPill(ui, rows)
@@ -405,7 +407,6 @@ private fun RowsViewport(
     CompositionLocalProvider(LocalBringIntoViewSpec provides NoAutoScroll) {
         Column(
             Modifier
-                .padding(top = VIEWPORT_TOP.px)
                 .fillMaxSize()
                 .verticalScroll(scroll)
                 .padding(top = FIRST_ROW_TOP.px, bottom = 360.px),
@@ -577,7 +578,7 @@ private fun AppTile(
     val fill = app.appCategory.fill
     val arranging = ui.arranging == app.component
     val dimmed = ui.arranging != null && !arranging
-    val grow by animateFloatAsState(if (focused) 1f else 0f, tween(180), label = "grow")
+    val scale by animateFloatAsState(if (focused || arranging) FOCUSED_SCALE else 1f, tween(180), label = "scale")
 
     LaunchedEffect(ui.pendingFocus) {
         if (ui.pendingFocus == app.component) {
@@ -591,7 +592,7 @@ private fun AppTile(
     Box(modifier.then(if (focused) Modifier.zIndex(1f) else Modifier)) {
         Column(
             Modifier
-                .width(lerp(TILE_W.toFloat(), FOCUSED_W.toFloat(), grow).px)
+                .width(TILE_W.px)
                 .graphicsLayer { alpha = if (dimmed) 0.4f else 1f },
             verticalArrangement = Arrangement.spacedBy(18.px),
         ) {
@@ -599,14 +600,11 @@ private fun AppTile(
                 onClick = onClick,
                 onLongClick = { if (ui.arranging == null) ui.menuFor = app.component },
                 modifier = Modifier
-                    .layout { measurable, _ ->
-                        // Grows wider for real (pushing neighbours) but reports the resting height,
-                        // spilling evenly above and below so the label stays put.
-                        val w = lerp(TILE_W.toFloat(), FOCUSED_W.toFloat(), grow).px.roundToPx()
-                        val h = lerp(TILE_H.toFloat(), FOCUSED_H.toFloat(), grow).px.roundToPx()
-                        val rest = TILE_H.px.roundToPx()
-                        val placeable = measurable.measure(Constraints.fixed(w, h))
-                        layout(w, rest) { placeable.place(0, (rest - h) / 2) }
+                    .size(TILE_W.px, TILE_H.px)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        transformOrigin = if (index == 0) TransformOrigin(0f, 0.5f) else TransformOrigin.Center
                     }
                     .focusRing(focused)
                     .semantics { contentDescription = app.label }
@@ -645,10 +643,10 @@ private fun AppTile(
             }
             TileLabel(app.label, focused)
         }
-        // Overlapping the focused tile (0..346) by 12 on each side, centered on it, as designed.
+        // 44 px outside the tile's resting edges, centred on it, as designed.
         if (arranging) {
             if (canMoveLeft) MoveArrow(Icons.ChevronLeft, -1, Modifier.offset(x = (-44).px, y = 62.px))
-            if (canMoveRight) MoveArrow(Icons.ChevronRight, 1, Modifier.offset(x = (FOCUSED_W + 44 - 56).px, y = 62.px))
+            if (canMoveRight) MoveArrow(Icons.ChevronRight, 1, Modifier.offset(x = (TILE_W + 44 - 56).px, y = 62.px))
         }
     }
 }
@@ -680,7 +678,7 @@ internal fun TileImage(app: AppEntry, images: AppImageSource) {
     val image by produceState(images.cachedImage(app), app) {
         if (value != null) return@produceState
         // Rendered at the focused size so the scaled-up tile stays sharp.
-        val w = with(density) { FOCUSED_W.px.roundToPx() }
+        val w = with(density) { (TILE_W * FOCUSED_SCALE).px.roundToPx() }
         value = images.loadImage(app, w, w * 9 / 16)
     }
     val current = image ?: return
@@ -693,28 +691,35 @@ internal fun TileImage(app: AppEntry, images: AppImageSource) {
     }
 }
 
-/** Long labels fade out at the end; on the focused tile they scroll, fading at both edges. */
+/**
+ * Shown only under the focused tile (design changelog 9b), fading in and out; other tiles keep the
+ * space so rows don't jump. Centred on the tile; a name too long for it starts at the left and
+ * scrolls back and forth, fading at both edges.
+ */
 @Composable
 private fun TileLabel(text: String, focused: Boolean) {
     var overflows by remember(text) { mutableStateOf(false) }
+    val alpha by animateFloatAsState(if (focused) 1f else 0f, tween(160), label = "label")
     Text(
         text = text,
         style = Type.TileLabel,
-        color = if (focused) Palette.TextBright else Palette.TextMuted,
+        color = Palette.TextBright,
         maxLines = 1,
         softWrap = false,
         overflow = TextOverflow.Clip,
+        textAlign = if (overflows) TextAlign.Start else TextAlign.Center,
         // A marquee measures unbounded, so overflow is only meaningful while not scrolling.
         onTextLayout = { if (!focused) overflows = it.hasVisualOverflow },
         modifier = Modifier
             .fillMaxWidth()
+            .graphicsLayer { this.alpha = alpha }
             .then(
-                when {
-                    !overflows -> Modifier
-                    focused -> Modifier
+                if (overflows && focused) {
+                    Modifier
                         .fadeEdges(start = 28.px, end = 28.px)
                         .basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 400, repeatDelayMillis = 1200)
-                    else -> Modifier.fadeEdges(start = 0.dp, end = 40.px)
+                } else {
+                    Modifier
                 },
             ),
     )
@@ -767,7 +772,7 @@ private fun BottomPill(ui: HomeUi, rows: List<HomeRow>) {
  * in step with the clock. Everything else about it was baked in when it was chosen.
  */
 @Composable
-private fun BackdropImage(frame: ImageBitmap?, collapse: () -> Float) {
+private fun BackdropImage(frame: ImageBitmap?, fade: () -> Float) {
     frame ?: return
     val shown = remember(frame) { Animatable(0f) }
     LaunchedEffect(frame) { shown.animateTo(1f, tween(200)) }
@@ -778,33 +783,63 @@ private fun BackdropImage(frame: ImageBitmap?, collapse: () -> Float) {
         modifier = Modifier
             .offset(x = WallpaperPipeline.FRAME_LEFT.px)
             .size(WallpaperPipeline.FRAME_WIDTH.px, WallpaperPipeline.FRAME_HEIGHT.px)
-            .graphicsLayer { alpha = shown.value * (1f - collapse()) },
+            .graphicsLayer { alpha = shown.value * fade() },
     )
 }
 
-/**
- * Rows fade in under the clock and out at the bottom. Painted in the background color rather than
- * masked, so no offscreen layer is needed while scrolling; the top one only shows once scrolled,
- * which keeps it off the wallpaper.
- */
+/** Rows fade out at the bottom edge; painted in the backdrop color so no offscreen layer is needed. */
 @Composable
-private fun ViewportEdges(collapse: () -> Float) {
+private fun BottomEdge() {
     val backdrop = LocalBackdrop.current
-    Box(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomStart) {
         Box(
             Modifier
-                .padding(top = VIEWPORT_TOP.px)
-                .fillMaxWidth()
-                .height(72.px)
-                .graphicsLayer { alpha = collapse() }
-                .background(Brush.verticalGradient(listOf(backdrop, backdrop.copy(alpha = 0f)))),
-        )
-        Box(
-            Modifier
-                .align(Alignment.BottomStart)
                 .fillMaxWidth()
                 .height(64.px)
                 .background(Brush.verticalGradient(listOf(backdrop.copy(alpha = 0f), backdrop))),
         )
     }
+}
+
+/**
+ * Top bar visibility (design changelog 9c): hidden while scrolling down; shown at once when
+ * scrolling back up, but only if the Favorites title is on screen below the bar; always shown at
+ * the top of the page.
+ */
+@Composable
+private fun rememberTopBarHidden(scroll: ScrollState, designPx: Float): Boolean {
+    var hidden by remember { mutableStateOf(false) }
+    LaunchedEffect(scroll, designPx) {
+        var last = 0f
+        snapshotFlow { scroll.value / designPx }.collect { y ->
+            hidden = when {
+                y <= 4f -> false
+                y < last - 1f -> if (FIRST_ROW_TOP - y >= TOP_BAR_BOTTOM) false else hidden
+                y > last + 1f -> true
+                else -> hidden
+            }
+            last = y
+        }
+    }
+    return hidden
+}
+
+/**
+ * The bar's own motion, independent of scrolling and quicker than it: hiding slides up 160 px in
+ * 280 ms and fades in 200 ms; showing slides back in 200 ms and fades in 160 ms.
+ */
+@Composable
+private fun TopBarMotion(hidden: Boolean, content: @Composable (Modifier) -> Unit) {
+    val shift = remember { Animatable(0f) }
+    val alpha = remember { Animatable(1f) }
+    LaunchedEffect(hidden) {
+        launch { shift.animateTo(if (hidden) -160f else 0f, tween(if (hidden) 280 else 200, easing = if (hidden) FastOutSlowInEasing else LinearOutSlowInEasing)) }
+        launch { alpha.animateTo(if (hidden) 0f else 1f, tween(if (hidden) 200 else 160)) }
+    }
+    content(
+        Modifier.graphicsLayer {
+            translationY = shift.value.px.toPx()
+            this.alpha = alpha.value
+        },
+    )
 }
