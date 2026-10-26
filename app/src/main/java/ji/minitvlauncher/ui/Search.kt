@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.FocusDirection
@@ -166,7 +167,8 @@ fun SearchScreen(
             verticalArrangement = Arrangement.spacedBy(40.px),
         ) {
             Row(
-                Modifier.padding(end = 120.px),
+                // Above the result title, which the buttons' tooltips overlap.
+                Modifier.zIndex(1f).padding(end = 120.px),
                 horizontalArrangement = Arrangement.spacedBy(20.px),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -240,8 +242,12 @@ fun SearchScreen(
 
 @Composable
 private fun CircleButton(icon: ImageVector, label: String, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    WithTooltip(if (focused) label else null) {
     Surface(
         onClick = onClick,
+        interactionSource = interaction,
         modifier = Modifier.size(64.px),
         shape = ClickableSurfaceDefaults.shape(CircleShape),
         colors = ClickableSurfaceDefaults.colors(
@@ -256,6 +262,7 @@ private fun CircleButton(icon: ImageVector, label: String, onClick: () -> Unit) 
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Image(rememberVectorPainter(icon), label, Modifier.size(30.px), colorFilter = ColorFilter.tint(LocalContentColor.current))
         }
+    }
     }
 }
 

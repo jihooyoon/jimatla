@@ -58,7 +58,7 @@ import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 
-// As rows scroll the clock goes from 128 px / weight 400 / -4 px spacing to 44 px / 600 / -0.5 px,
+// As rows scroll the clock goes from 128 px / weight 400 / -7 px spacing to 44 px / 600 / -1 px,
 // with the optical size following the size. (The design's large weight is 300; 400 at the user's
 // request.) Weight and spacing need new text layout, so they move in CLOCK_STEPS steps, prepared
 // ahead of time; size and position follow scrolling smoothly through the graphics layer.
@@ -67,7 +67,8 @@ private val STEP_VALUES = (0..CLOCK_STEPS).map { it / CLOCK_STEPS.toFloat() }
 
 private fun clockSize(e: Float) = lerp(128f, 44f, e)
 private fun clockWeight(e: Float) = lerp(400f, 600f, e).roundToInt()
-private fun clockSpacing(e: Float) = lerp(-4f, -0.5f, e)
+// Design changelog 8: -7 px at 128 (-0.055 em) to -1 px at 44 (-0.023 em).
+private fun clockSpacing(e: Float) = lerp(-7f, -1f, e)
 
 /** The clock is always laid out at 128 px and scaled down; spacing is expressed in those units. */
 private fun clockStyle(e: Float) = TextStyle(

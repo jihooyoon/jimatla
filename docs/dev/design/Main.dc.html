@@ -129,7 +129,7 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"></path><path d="M3 12h11"></path><path d="M10 8l4 4-4 4"></path></svg>
         </button>
         <sc-if value="{{hv.input}}" hint-placeholder-val="{{ false }}">
-          <div style="{{labelStyle}}">{{lbl.input}}</div>
+          <div data-tip="1" style="{{labelStyle}}">{{lbl.input}}</div>
         </sc-if>
       </div>
 
@@ -138,7 +138,7 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10-5 5V2l5 5L7 17"></path></svg>
         </button>
         <sc-if value="{{hv.bt}}" hint-placeholder-val="{{ false }}">
-          <div style="{{labelStyle}}">{{lbl.bt}}</div>
+          <div data-tip="1" style="{{labelStyle}}">{{lbl.bt}}</div>
         </sc-if>
       </div>
 
@@ -161,7 +161,7 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
           </sc-if>
         </button>
         <sc-if value="{{hv.net}}" hint-placeholder-val="{{ false }}">
-          <div style="{{labelStyle}}">{{lbl.net}}</div>
+          <div data-tip="1" style="{{labelStyle}}">{{lbl.net}}</div>
         </sc-if>
       </div>
 
@@ -173,7 +173,7 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
           <span aria-hidden="true" style="position: absolute; top: -4px; right: -4px; min-width: 26px; height: 26px; box-sizing: border-box; padding: 0 7px; border-radius: 13px; background: #F4F2EE; color: #0E0F11; border: 2px solid #0E0F11; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; pointer-events: none">{{notifCount}}</span>
         </sc-if>
         <sc-if value="{{hv.notif}}" hint-placeholder-val="{{ false }}">
-          <div style="{{labelStyle}}">{{lbl.notif}}</div>
+          <div data-tip="1" style="{{labelStyle}}">{{lbl.notif}}</div>
         </sc-if>
       </div>
 
@@ -182,7 +182,7 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2"></rect><path d="M3 16l5-5 4 4 3-3 6 6"></path><circle cx="16" cy="9" r="1.6"></circle></svg>
         </button>
         <sc-if value="{{hv.wall}}" hint-placeholder-val="{{ false }}">
-          <div style="{{labelStyle}}">Hình nền</div>
+          <div data-tip="1" style="{{labelStyle}}">Hình nền</div>
         </sc-if>
       </div>
 
@@ -191,7 +191,7 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
         </button>
         <sc-if value="{{hv.set}}" hint-placeholder-val="{{ false }}">
-          <div style="{{labelStyle}}">Cài đặt</div>
+          <div data-tip="1" style="{{labelStyle}}">Cài đặt</div>
         </sc-if>
       </div>
 
@@ -215,7 +215,7 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0"></path><path d="M12 17.5V21"></path></svg>
           </button>
           <sc-if value="{{hv.mic}}" hint-placeholder-val="{{ false }}">
-            <div style="{{labelStyleLeft}}">Tìm bằng giọng nói</div>
+            <div data-tip="1" style="{{labelStyle}}">Tìm bằng giọng nói</div>
           </sc-if>
         </div>
         <label for="tv-search" style="flex: 1; display: flex; align-items: center; gap: 16px; height: 64px; box-sizing: border-box; padding: 0 28px; border-radius: 32px; background: #1F2025; border: 1.5px solid #F4F2EE">
@@ -227,7 +227,7 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>
           </button>
           <sc-if value="{{hv.close}}" hint-placeholder-val="{{ false }}">
-            <div style="{{labelStyle}}">Đóng</div>
+            <div data-tip="1" style="{{labelStyle}}">Đóng</div>
           </sc-if>
         </div>
       </div>
@@ -519,6 +519,22 @@ class Component extends DCLogic {
   componentWillUnmount() { clearTimeout(this.t); clearTimeout(this.pressTimer); clearTimeout(this.toastTimer); }
   componentDidUpdate(prevProps, prevState) {
     var self = this;
+    if (this.state.hover !== prevState.hover && this.state.hover && this.root) {
+      var tips = this.root.querySelectorAll('[data-tip]');
+      var tip = tips.length ? tips[tips.length - 1] : null;
+      if (tip) {
+        var rr0 = this.root.getBoundingClientRect();
+        var sc0 = rr0.width / 1920 || 1;
+        var tr0 = tip.getBoundingClientRect();
+        var cur = this.state.tipShift || 0;
+        var l0 = (tr0.left - rr0.left) / sc0 - cur;
+        var r0 = (tr0.right - rr0.left) / sc0 - cur;
+        var EDGE = 48;
+        var need = r0 > 1920 - EDGE ? (1920 - EDGE) - r0 : (l0 < EDGE ? EDGE - l0 : 0);
+        need = Math.round(need);
+        if (need !== cur) this.setState({ tipShift: need });
+      }
+    }
     if (this.state.launching && !prevState.launching && this.root) {
       var lb = this.root.querySelector('[data-launch]');
       if (lb) lb.focus({ preventScroll: true });
@@ -1064,7 +1080,7 @@ class Component extends DCLogic {
         var fsz = L(128, 44);
         // Dịch trái đúng bằng khoảng trống bên trái của số (tỉ lệ theo cỡ chữ), rồi cộng lại khoảng trống của dòng ngày khi ngày còn hiện
         var cLeft = 120 - st.clockBear * fsz + st.dateBear * (1 - e);
-        return 'position: absolute; left: ' + cLeft.toFixed(1) + 'px; top: ' + L(232, 74).toFixed(1) + 'px; z-index: 2; font-size: ' + L(128, 44).toFixed(1) + 'px; font-weight: ' + Math.round(L(300, 600)) + '; letter-spacing: ' + L(-4, -0.5).toFixed(2) + 'px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none;';
+        return 'position: absolute; left: ' + cLeft.toFixed(1) + 'px; top: ' + L(232, 74).toFixed(1) + 'px; z-index: 2; font-size: ' + L(128, 44).toFixed(1) + 'px; font-weight: ' + Math.round(L(300, 600)) + '; letter-spacing: ' + L(-7, -1).toFixed(2) + 'px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none;';
       })(),
       dateStyle: (function () {
         var e = st.hp * st.hp * (3 - 2 * st.hp);
@@ -1124,7 +1140,8 @@ class Component extends DCLogic {
 
       btn: btn, hv: hv, hIn: hIn,
       hOut: function () { if (self.state.hover !== null) self.setState({ hover: null }); },
-      labelStyle: 'position: absolute; top: 80px; right: 0; white-space: nowrap; padding: 8px 16px; border-radius: 10px; background: #F4F2EE; color: #0E0F11; font-size: 20px; font-weight: 500; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.4);',
+      // Tooltip căn giữa theo nút; chỉ lệch khi chạm lề an toàn 48px của màn hình (tipShift do componentDidUpdate đo)
+      labelStyle: 'position: absolute; top: 80px; left: 50%; transform: translateX(calc(-50% + ' + (st.tipShift || 0) + 'px)); white-space: nowrap; padding: 8px 16px; border-radius: 10px; background: #F4F2EE; color: #0E0F11; font-size: 20px; font-weight: 500; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.4);',
       labelStyleLeft: 'position: absolute; top: 80px; left: 0; white-space: nowrap; padding: 8px 16px; border-radius: 10px; background: #F4F2EE; color: #0E0F11; font-size: 20px; font-weight: 500; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.4);',
       hasNotif: nCount > 0,
       noNotif: nCount === 0,

@@ -62,60 +62,31 @@ data class TopButton(
     val alertDot: Boolean = false,
 )
 
-/**
- * Right-aligned row of round buttons; the focused one shows its label in a tooltip underneath,
- * aligned to the button's right edge so it never runs off screen.
- */
+/** Right-aligned row of round buttons; the focused one shows its label underneath (see [WithTooltip]). */
 @Composable
 fun TopBar(buttons: List<TopButton>, modifier: Modifier = Modifier) {
-    val rightEdges = remember { HashMap<String, Int>() }
-    // Focus is read as state from each button's interaction source rather than from change
-    // events, which fire again (and wrongly) when a button is rebuilt with a new label.
-    var focused: String? = null
-
     Box(modifier.fillMaxWidth().padding(top = 64.px, end = SIDE.px), contentAlignment = Alignment.TopEnd) {
         Row(horizontalArrangement = Arrangement.spacedBy(20.px)) {
             buttons.forEach { b ->
                 key(b.id) {
+                    // Focus is read as state from the button's interaction source rather than from
+                    // change events, which fire again (and wrongly) when a button gets a new label.
                     val interaction = remember { MutableInteractionSource() }
-                    if (interaction.collectIsFocusedAsState().value) focused = b.id
-                    RoundButton(
-                        b,
-                        placement = Modifier.onPlaced { rightEdges[b.id] = (it.positionInParent().x + it.size.width).toInt() },
-                        interaction = interaction,
-                    )
+                    val focused by interaction.collectIsFocusedAsState()
+                    WithTooltip(if (focused) b.label else null) {
+                        RoundButton(b, interaction)
+                    }
                 }
             }
-        }
-        val current = buttons.firstOrNull { it.id == focused }
-        if (current != null) {
-            val rowWidth = rightEdges.values.maxOrNull() ?: 0
-            val right = rightEdges[current.id] ?: rowWidth
-            Text(
-                current.label,
-                style = Tooltip,
-                color = Palette.Background,
-                maxLines = 1,
-                modifier = Modifier
-                    .offset(y = 80.px)
-                    .layout { measurable, constraints ->
-                        // Anchor the tooltip's right edge to the button's.
-                        val p = measurable.measure(constraints.copy(minWidth = 0))
-                        layout(p.width, p.height) { p.place(-(rowWidth - right), 0) }
-                    }
-                    .background(Palette.TextBright, RoundedCornerShape(10.px))
-                    .padding(horizontal = 16.px, vertical = 8.px),
-            )
         }
     }
 }
 
-private val Tooltip = TextStyle(fontFamily = appFont(20), fontSize = 20.tx, fontWeight = FontWeight.Medium)
 private val Badge = TextStyle(fontFamily = appFont(15), fontSize = 15.tx, fontWeight = FontWeight.SemiBold)
 
 @Composable
-private fun RoundButton(b: TopButton, placement: Modifier, interaction: MutableInteractionSource) {
-    Box(placement) {
+private fun RoundButton(b: TopButton, interaction: MutableInteractionSource) {
+    Box {
         Surface(
             onClick = b.onClick,
             interactionSource = interaction,

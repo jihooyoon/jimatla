@@ -42,6 +42,7 @@ import ji.minitvlauncher.system.NotificationItem
 import ji.minitvlauncher.system.TvInputItem
 import ji.minitvlauncher.ui.theme.LauncherTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -393,5 +394,41 @@ class HomeScreenScreenshotTest {
         // A deliberate press inside the menu still works.
         press(listOf(Key.DirectionCenter))
         assertEquals(listOf(apps[0]), launched)
+    }
+
+    /** The tooltip's text node; the pill around it adds 16 px each side and 8 px above and below. */
+    private fun boundsOf(text: String) = compose.onNodeWithText(text).fetchSemanticsNode().boundsInRoot
+
+    /** Design changelog 7: centred under the button, nudged only to stay 48 px from the screen edge. */
+    @Test
+    fun tooltipsCentreAndKeepTheSafeEdge() {
+        val longName = "Nha_Minh_5G_Tang_3_Phong_Khach_Ten_Wifi_Rat_Rat_Rat_Dai_Qua"
+        status = SystemStatus(network = NetStatus(NetKind.Wifi, longName))
+        show(apps.take(2))
+        press(listOf(Key.DirectionUp, Key.DirectionRight)) // pill → Bluetooth
+        val bt = boundsOf("Bluetooth và phụ kiện")
+        val btButtonCentre = 1484f + 32f // first of four 64 px buttons ending at 1800, 20 apart
+        assertEquals(btButtonCentre, bt.center.x, 1.5f)
+        assertEquals(64f + 80f + 8f, bt.top, 1.5f)
+        press(listOf(Key.DirectionRight, Key.DirectionRight, Key.DirectionRight)) // → Settings
+        val settings = boundsOf("Cài đặt")
+        assertEquals(1736f + 32f, settings.center.x, 1.5f)
+        press(listOf(Key.DirectionLeft, Key.DirectionLeft)) // → network, long Wi‑Fi name
+        val net = boundsOf(longName)
+        shot("tooltip_long_wifi")
+        // Its centred position would run past the edge; it stops exactly 48 px short of it.
+        val pillRight = net.right + 16f
+        assertTrue("right edge $pillRight", pillRight <= 1920f - 48f + 0.5f && pillRight >= 1920f - 48f - 1.5f)
+    }
+
+    @Test
+    fun searchButtonsHaveTooltips() {
+        show(apps.take(2))
+        press(listOf(Key.DirectionUp, Key.DirectionCenter, Key.DirectionLeft)) // search → mic
+        compose.onNodeWithText("Tìm bằng giọng nói").assertExists()
+        val mic = boundsOf("Tìm bằng giọng nói")
+        // Centred on the mic (x 120..184) unless that would cross the 48 px edge; either way inside it.
+        assertTrue("left ${mic.left - 16f}", mic.left - 16f >= 48f - 0.5f)
+        captureScreenRoboImage("build/outputs/roborazzi/search_tooltip.png")
     }
 }
