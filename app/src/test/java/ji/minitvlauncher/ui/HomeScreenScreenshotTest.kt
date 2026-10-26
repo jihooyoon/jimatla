@@ -465,4 +465,16 @@ class HomeScreenScreenshotTest {
         press(listOf(Key.DirectionUp, Key.DirectionRight, Key.DirectionRight, Key.DirectionDown)) // from a right-hand button
         assertEquals(tile, focusedBounds())
     }
+
+    /** Five tiles fit across: focusing the fifth must not scroll the row. */
+    @Test
+    fun fifthTileFocusDoesNotScrollTheRow() {
+        show(apps.take(6))
+        fun left(label: String) = compose.onNode(androidx.compose.ui.test.hasContentDescription(label)).fetchSemanticsNode().boundsInRoot.left
+        val first = apps[0].label
+        assertEquals(120f, left(first), 1f)
+        repeat(4) { press(listOf(Key.DirectionRight)) }
+        shot("fifth_tile_focused")
+        assertEquals("row scrolled when focusing the fifth tile", 120f, left(first), 1f)
+    }
 }

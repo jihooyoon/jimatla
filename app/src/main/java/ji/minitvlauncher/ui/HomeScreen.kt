@@ -187,7 +187,7 @@ private const val TILE_H = 180
 // The focused tile scales up 1.08 in place (design changelog 9a): it floats over the 32 px gaps
 // without moving anything; a row's first tile grows from its left edge to keep the x = 120 margin.
 private const val FOCUSED_SCALE = 1.08f
-private const val TILE_GAP = 24 // between tiles in a row (design: 32; 24 at the user's request)
+private const val TILE_GAP = 20 // between tiles in a row (design: 32); at most 20 so five fit without scrolling (user's call)
 
 /** Transient home-screen state: which tile has its menu open, is being moved, or should take focus. */
 @Stable
