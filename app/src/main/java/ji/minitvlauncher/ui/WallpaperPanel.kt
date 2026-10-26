@@ -42,6 +42,7 @@ import ji.minitvlauncher.wallpaper.WallpaperChoice
 import ji.minitvlauncher.wallpaper.WallpaperPipeline
 import ji.minitvlauncher.ui.theme.Manrope
 import ji.minitvlauncher.ui.theme.Palette
+import ji.minitvlauncher.ui.theme.TILE_RADIUS
 import ji.minitvlauncher.ui.theme.px
 import ji.minitvlauncher.ui.theme.tx
 
@@ -99,7 +100,7 @@ private fun WallpaperThumb(
     modifier: Modifier,
 ) {
     val image by produceState<ImageBitmap?>(null, choice) { value = thumbnail(choice) }
-    val shape = RoundedCornerShape(12.px)
+    val shape = RoundedCornerShape(TILE_RADIUS.px)
     Column(verticalArrangement = Arrangement.spacedBy(12.px)) {
         Surface(
             onClick = onClick,
@@ -133,7 +134,7 @@ private fun WallpaperThumb(
 
 @Composable
 private fun PickButton(label: String, modifier: Modifier, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(12.px)
+    val shape = RoundedCornerShape(TILE_RADIUS.px)
     Surface(
         onClick = onClick,
         modifier = modifier,

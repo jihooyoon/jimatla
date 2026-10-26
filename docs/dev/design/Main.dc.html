@@ -65,7 +65,7 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
           </div>
           <div data-strip="1" class="tv-noscroll" style="position: relative; display: flex; gap: 32px; align-items: flex-start; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; padding: 24px 120px 0; height: 230px">
             <sc-if value="{{row.empty}}" hint-placeholder-val="{{ false }}">
-              <div style="flex: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 672px; height: 180px; border-radius: 12px; border: 2px dashed #3A3B3F; color: #8A8882; font-size: 24px; padding: 0 40px; text-align: center">Nhấn giữ một ứng dụng rồi chọn “Thêm vào ưa thích”</div>
+              <div style="flex: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 672px; height: 180px; border-radius: 16px; border: 2px dashed #3A3B3F; color: #8A8882; font-size: 24px; padding: 0 40px; text-align: center">Nhấn giữ một ứng dụng rồi chọn “Thêm vào ưa thích”</div>
             </sc-if>
             <sc-for list="{{row.apps}}" as="app" hint-placeholder-count="6">
               <div style="{{app.wrapStyle}}">
@@ -922,7 +922,7 @@ class Component extends DCLogic {
           },
           wrapStyle: 'position: relative; flex: none; transition: opacity 160ms ease; ' + (dim ? 'filter: brightness(0.4) saturate(0.6);' : '') + (isArr ? ' z-index: 2;' : (sel ? ' z-index: 1;' : '')),
           colStyle: 'flex: none; display: flex; flex-direction: column; gap: 18px; align-items: flex-start; width: ' + w + 'px; padding: 0; margin: 0; border: none; background: transparent; cursor: pointer; font-family: inherit; color: inherit; outline: none; touch-action: manipulation; -webkit-touch-callout: none; transition: width 180ms ease;',
-          tileStyle: 'display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: ' + w + 'px; height: ' + h + 'px; border-radius: 12px; background: ' + fillOf[String(a.cat)] + '; margin: ' + (sel ? '-7px 0' : '0') + '; transition: width 180ms ease, height 180ms ease, margin 180ms ease, box-shadow 180ms ease; ' + (isArr
+          tileStyle: 'display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: ' + w + 'px; height: ' + h + 'px; border-radius: 16px; background: ' + fillOf[String(a.cat)] + '; margin: ' + (sel ? '-7px 0' : '0') + '; transition: width 180ms ease, height 180ms ease, margin 180ms ease, box-shadow 180ms ease; ' + (isArr
             ? 'box-shadow: 0 0 0 4px #F4F2EE, 0 0 0 10px rgba(244,242,238,0.25), 0 20px 40px rgba(0,0,0,0.5);'
             : sel ? 'box-shadow: 0 0 0 4px #F4F2EE, 0 20px 40px rgba(0,0,0,0.5);'
             : ''),
@@ -975,7 +975,7 @@ class Component extends DCLogic {
     var results = found.map(function (a) {
       return {
         label: a.label,
-        tileStyle: 'display: flex; align-items: center; justify-content: center; width: 320px; height: 180px; border-radius: 12px; background: ' + fillOf[String(a.cat)] + ';',
+        tileStyle: 'display: flex; align-items: center; justify-content: center; width: 320px; height: 180px; border-radius: 16px; background: ' + fillOf[String(a.cat)] + ';',
         open: function () { self.setState({ search: false, q: '' }); self.launch(a.label, fillOf[String(a.cat)], null); }
       };
     });
@@ -1003,7 +1003,7 @@ class Component extends DCLogic {
       hasCustom: !!st.custom,
       customIs: { c32: st.custom === 'c32', c23: st.custom === 'c23' },
       pickLabel: st.custom ? 'Thay ảnh của bạn…' : '+  Chọn ảnh từ bộ nhớ',
-      pickBtnStyle: 'grid-column: ' + (st.custom ? 'auto' : '1 / -1') + '; display: flex; align-items: center; justify-content: center; gap: 12px; ' + (st.custom ? 'aspect-ratio: 16 / 9; align-self: start; ' : 'height: 64px; ') + 'border-radius: 12px; border: 1.5px dashed #3A3B3F; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 22px; font-weight: 500; cursor: pointer; padding: 0 16px; text-align: center',
+      pickBtnStyle: 'grid-column: ' + (st.custom ? 'auto' : '1 / -1') + '; display: flex; align-items: center; justify-content: center; gap: 12px; ' + (st.custom ? 'aspect-ratio: 16 / 9; align-self: start; ' : 'height: 64px; ') + 'border-radius: 16px; border: 1.5px dashed #3A3B3F; background: transparent; color: #E8E6E1; font-family: inherit; font-size: 22px; font-weight: 500; cursor: pointer; padding: 0 16px; text-align: center',
       pickFromStorage: function () {
         // Giả lập: mỗi lần chọn đổi qua lại giữa ảnh 3:2 và 2:3; ảnh mới thay ảnh cũ và được đặt làm hình nền ngay
         var next = self.state.custom === 'c32' ? 'c23' : 'c32';
@@ -1022,7 +1022,7 @@ class Component extends DCLogic {
         var o = {};
         ['dusk', 'teal', 'desert', 'none', 'custom'].forEach(function (k) {
           var on = k === 'custom' ? (!!st.custom && wk === st.custom) : wk === k;
-          o[k] = 'display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; transition: box-shadow 140ms ease; background: ' + (k === 'none' ? 'rgb(14,15,17)' : '#222') + '; ' + (k === 'none' ? 'border: 1.5px solid #3A3B3F; box-sizing: border-box; ' : '') + (on ? 'box-shadow: 0 0 0 4px #F4F2EE;' : '');
+          o[k] = 'display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 16px; overflow: hidden; transition: box-shadow 140ms ease; background: ' + (k === 'none' ? 'rgb(14,15,17)' : '#222') + '; ' + (k === 'none' ? 'border: 1.5px solid #3A3B3F; box-sizing: border-box; ' : '') + (on ? 'box-shadow: 0 0 0 4px #F4F2EE;' : '');
         });
         return o;
       })(),
@@ -1149,7 +1149,7 @@ class Component extends DCLogic {
       info: {
         label: infoApp ? infoApp.label : '',
         cat: infoApp ? (infoApp.cat ? catTitle[infoApp.cat] + ' (' + infoApp.cat + ')' : 'Không khai báo → xếp vào “Khác”') : '',
-        bannerStyle: 'display: flex; align-items: center; justify-content: center; width: 320px; height: 180px; border-radius: 12px; background: ' + (infoApp ? fillOf[String(infoApp.cat)] : '#3A3B40') + ';'
+        bannerStyle: 'display: flex; align-items: center; justify-content: center; width: 320px; height: 180px; border-radius: 16px; background: ' + (infoApp ? fillOf[String(infoApp.cat)] : '#3A3B40') + ';'
       },
 
       inputs: inputs,

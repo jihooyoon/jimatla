@@ -73,6 +73,7 @@ import ji.minitvlauncher.appCategory
 import ji.minitvlauncher.matchesQuery
 import ji.minitvlauncher.ui.theme.Manrope
 import ji.minitvlauncher.ui.theme.Palette
+import ji.minitvlauncher.ui.theme.TILE_RADIUS
 import ji.minitvlauncher.ui.theme.px
 import ji.minitvlauncher.ui.theme.tx
 
@@ -258,7 +259,7 @@ private fun CircleButton(icon: ImageVector, label: String, onClick: () -> Unit) 
 
 @Composable
 private fun ResultTile(app: AppEntry, images: AppImageSource, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(12.px)
+    val shape = RoundedCornerShape(TILE_RADIUS.px)
     val fill = app.appCategory.fill
     Column(verticalArrangement = Arrangement.spacedBy(16.px)) {
         Card(

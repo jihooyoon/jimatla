@@ -42,6 +42,7 @@ import androidx.tv.material3.Text
 import ji.minitvlauncher.R
 import ji.minitvlauncher.ui.theme.Manrope
 import ji.minitvlauncher.ui.theme.Palette
+import ji.minitvlauncher.ui.theme.TILE_RADIUS
 import ji.minitvlauncher.ui.theme.px
 import ji.minitvlauncher.ui.theme.tx
 
@@ -74,7 +75,7 @@ fun ImagePicker(images: List<Uri>, thumbnail: suspend (Uri) -> ImageBitmap?, onP
             ) {
                 itemsIndexed(images, key = { _, uri -> uri.toString() }) { i, uri ->
                     val image by produceState<ImageBitmap?>(null, uri) { value = thumbnail(uri) }
-                    val shape = RoundedCornerShape(12.px)
+                    val shape = RoundedCornerShape(TILE_RADIUS.px)
                     Surface(
                         onClick = { onPick(uri) },
                         modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).then(if (i == 0) Modifier.focusRequester(first) else Modifier),

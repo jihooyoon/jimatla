@@ -118,6 +118,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.ImageBitmap
 import ji.minitvlauncher.ui.theme.Palette
 import ji.minitvlauncher.ui.theme.Type
+import ji.minitvlauncher.ui.theme.TILE_RADIUS
 import ji.minitvlauncher.ui.theme.px
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -536,7 +537,7 @@ private fun EmptyFavorites() {
                     color = Palette.BorderStrong,
                     topLeft = Offset(stroke / 2, stroke / 2),
                     size = Size(size.width - stroke, size.height - stroke),
-                    cornerRadius = CornerRadius(12.px.toPx()),
+                    cornerRadius = CornerRadius(TILE_RADIUS.px.toPx()),
                     style = Stroke(stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(dash, dash))),
                 )
             }
@@ -575,7 +576,7 @@ private fun AppTile(
     val focused by interaction.collectIsFocusedAsState()
     val focus = remember { FocusRequester() }
     val bringIntoView = remember { BringIntoViewRequester() }
-    val shape = RoundedCornerShape(12.px)
+    val shape = RoundedCornerShape(TILE_RADIUS.px)
     val fill = app.appCategory.fill
     val arranging = ui.arranging == app.component
     val dimmed = ui.arranging != null && !arranging

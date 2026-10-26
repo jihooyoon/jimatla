@@ -22,6 +22,9 @@ import ji.minitvlauncher.R
 val Number.px: Dp get() = (toFloat() / 2f).dp
 val Number.tx: TextUnit get() = (toFloat() / 2f).sp
 
+/** Corner radius of every app/picture tile, focused or not (design: 16 px = 8 dp). */
+const val TILE_RADIUS = 16
+
 object Palette {
     val Background = Color(0xFF0E0F11)
     val Panel = Color(0xFF17181C)
