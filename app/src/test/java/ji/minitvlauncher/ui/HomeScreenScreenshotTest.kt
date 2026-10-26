@@ -448,4 +448,21 @@ class HomeScreenScreenshotTest {
         press(listOf(Key.DirectionUp)) // top of the page
         assertEquals(64f, topBarTop(), 1f)
     }
+
+    private fun focusedBounds() =
+        compose.onAllNodes(androidx.compose.ui.test.isFocused(), useUnmergedTree = true).fetchSemanticsNodes().single().boundsInRoot
+
+    /** The rows fill the screen behind the top bar; Down from any of its buttons must return to them. */
+    @Test
+    fun downFromTopBarReturnsToTheTileFocusCameFrom() {
+        show(apps.take(3))
+        press(listOf(Key.DirectionRight)) // second favorite
+        val tile = focusedBounds()
+        press(listOf(Key.DirectionUp)) // into the top bar
+        assertTrue(focusedBounds().top < 130f)
+        press(listOf(Key.DirectionDown))
+        assertEquals(tile, focusedBounds())
+        press(listOf(Key.DirectionUp, Key.DirectionRight, Key.DirectionRight, Key.DirectionDown)) // from a right-hand button
+        assertEquals(tile, focusedBounds())
+    }
 }

@@ -187,6 +187,7 @@ private const val TILE_H = 180
 // The focused tile scales up 1.08 in place (design changelog 9a): it floats over the 32 px gaps
 // without moving anything; a row's first tile grows from its left edge to keep the x = 120 margin.
 private const val FOCUSED_SCALE = 1.08f
+private const val TILE_GAP = 24 // between tiles in a row (design: 32; 24 at the user's request)
 
 /** Transient home-screen state: which tile has its menu open, is being moved, or should take focus. */
 @Stable
@@ -197,6 +198,8 @@ private class HomeUi {
     var voiceQuery by mutableStateOf<String?>(null)
     var arranging by mutableStateOf<ComponentName?>(null)
     var pendingFocus by mutableStateOf<ComponentName?>(null)
+    /** The tile focus was last on, for coming back down from the top bar. Not state: nothing redraws on it. */
+    var lastTile: FocusRequester? = null
     var toast by mutableStateOf<Int?>(null)
     var toastSerial by mutableIntStateOf(0)
 
@@ -261,13 +264,20 @@ fun HomeScreen(
         Clock(scrollY, fade, now, weather)
         RowsViewport(rows, images, actions, ui, onMenuAction, onMove, scroll, firstTile, firstRowWithApps)
         BottomEdge()
+        // The rows fill the screen behind the bar, which confuses Compose's own search for "below",
+        // so Down from any top-bar button goes back to the tile focus came from (or the first one).
+        val down = Modifier.onPreviewKeyEvent { event ->
+            if (event.type != KeyEventType.KeyDown || event.key != Key.DirectionDown) return@onPreviewKeyEvent false
+            if (runCatching { ui.lastTile!!.requestFocus() }.isFailure) runCatching { firstTile.requestFocus() }
+            true
+        }
         TopBarMotion(topBarHidden) { motion ->
             SearchPill(
                 onClick = { ui.voiceQuery = null; ui.searching = true },
                 hidden = topBarHidden,
-                modifier = Modifier.padding(start = SIDE.px, top = 64.px).then(motion),
+                modifier = Modifier.padding(start = SIDE.px, top = 64.px).then(motion).then(down),
             )
-            TopBar(topButtons(status, actions, ui), hidden = topBarHidden, modifier = motion)
+            TopBar(topButtons(status, actions, ui), hidden = topBarHidden, modifier = motion.then(down))
         }
         if (ui.menuFor != null) Box(Modifier.fillMaxSize().background(Color(0x59050608)))
         if (ui.panel != null) Box(Modifier.fillMaxSize().background(ScrimColor))
@@ -494,7 +504,7 @@ private fun AppRow(
                     .fillMaxWidth()
                     .onFocusChanged { if (!it.hasFocus) focusedApp = null },
                 contentPadding = PaddingValues(start = SIDE.px, end = (SIDE + 88).px, top = 24.px),
-                horizontalArrangement = Arrangement.spacedBy(32.px),
+                horizontalArrangement = Arrangement.spacedBy(TILE_GAP.px),
             ) {
                 itemsIndexed(row.apps, key = { _, app -> app.component.flattenToString() }) { index, app ->
                     val arranging = ui.arranging == app.component
@@ -611,7 +621,12 @@ private fun AppTile(
                     .focusRequester(focus)
                     .then(if (extraFocus != null) Modifier.focusRequester(extraFocus) else Modifier)
                     .bringIntoViewRequester(bringIntoView)
-                    .onFocusChanged { if (it.isFocused) onFocused() }
+                    .onFocusChanged {
+                        if (it.isFocused) {
+                            ui.lastTile = focus
+                            onFocused()
+                        }
+                    }
                     .onPreviewKeyEvent { event ->
                         val down = event.type == KeyEventType.KeyDown
                         when {
