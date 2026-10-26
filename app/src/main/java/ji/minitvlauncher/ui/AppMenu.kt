@@ -133,13 +133,11 @@ private class MenuPosition(private val density: Density) : PopupPositionProvider
     ): IntOffset = with(density) {
         val margin = 40.px.roundToPx()
         val gap = 14.px.roundToPx()
-        // The focused tile is drawn scaled up around its center.
-        val grow = ((anchorBounds.height * (FOCUSED_SCALE - 1f)) / 2f).toInt()
-        val growX = ((anchorBounds.width * (FOCUSED_SCALE - 1f)) / 2f).toInt()
-        val x = (anchorBounds.left - growX).coerceIn(margin, (windowSize.width - margin - popupContentSize.width).coerceAtLeast(margin))
-        val below = anchorBounds.bottom + grow + gap
+        // Anchored to the tile's own bounds, which already include its focused growth.
+        val x = anchorBounds.left.coerceIn(margin, (windowSize.width - margin - popupContentSize.width).coerceAtLeast(margin))
+        val below = anchorBounds.bottom + gap
         val y = if (below + popupContentSize.height <= windowSize.height - margin) below
-        else (anchorBounds.top - grow - gap - popupContentSize.height).coerceAtLeast(margin)
+        else (anchorBounds.top - gap - popupContentSize.height).coerceAtLeast(margin)
         IntOffset(x, y)
     }
 }

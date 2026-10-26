@@ -90,6 +90,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.util.lerp
 import androidx.tv.material3.Border
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
@@ -178,9 +182,10 @@ private const val COLLAPSE_DISTANCE = 220 // scroll over which the clock shrinks
 internal const val SIDE = 120
 private const val TILE_W = 320
 private const val TILE_H = 180
-internal const val FOCUSED_SCALE = 352f / TILE_W
-// "20:45" at 44 px semibold is about 2.7 em; the search pill sits 32 px past it once collapsed.
-private const val CLOCK_SMALL_WIDTH = 119
+// The focused tile grows to 346×194: 7 px up and down around its middle without moving the
+// label, and 26 px to the right, pushing later tiles along so gaps stay 32 px.
+private const val FOCUSED_W = 346
+private const val FOCUSED_H = 194
 
 /** Transient home-screen state: which tile has its menu open, is being moved, or should take focus. */
 @Stable
@@ -253,7 +258,7 @@ fun HomeScreen(
         RowsViewport(rows, images, actions, ui, onMenuAction, onMove, scroll, firstTile, firstRowWithApps)
         ViewportEdges(collapse)
         Clock(collapse, now, weather)
-        val pillShift = with(density) { (CLOCK_SMALL_WIDTH + 32).px.toPx() }
+        val pillShift = with(density) { collapsedPillShift(now).px.toPx() }
         SearchPill(
             onClick = { ui.voiceQuery = null; ui.searching = true },
             modifier = Modifier
@@ -403,8 +408,8 @@ private fun RowsViewport(
                 .fillMaxSize()
                 .verticalScroll(scroll)
                 .padding(top = FIRST_ROW_TOP.px, bottom = 360.px),
-            // 72 between a row's labels and the next title, minus the 18 the strip keeps for the focused tile.
-            verticalArrangement = Arrangement.spacedBy(54.px),
+            // 72 from a row's labels to the next title; the focused tile grows within the row's height.
+            verticalArrangement = Arrangement.spacedBy(72.px),
         ) {
             rows.forEachIndexed { index, row ->
                 key(row.key) {
@@ -489,7 +494,7 @@ private fun AppRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .onFocusChanged { if (!it.hasFocus) focusedApp = null },
-                contentPadding = PaddingValues(start = SIDE.px, end = (SIDE + 88).px, top = 24.px, bottom = 18.px),
+                contentPadding = PaddingValues(start = SIDE.px, end = (SIDE + 88).px, top = 24.px),
                 horizontalArrangement = Arrangement.spacedBy(32.px),
             ) {
                 itemsIndexed(row.apps, key = { _, app -> app.component.flattenToString() }) { index, app ->
@@ -523,7 +528,7 @@ private fun EmptyFavorites() {
     val dash = with(LocalDensity.current) { 10.px.toPx() }
     Box(
         Modifier
-            .padding(start = SIDE.px, top = 24.px, bottom = 18.px + 18.px + 32.px)
+            .padding(start = SIDE.px, top = 24.px, bottom = 18.px + 32.px)
             .size(672.px, TILE_H.px)
             .drawBehind {
                 val stroke = 2.px.toPx()
@@ -574,6 +579,7 @@ private fun AppTile(
     val fill = app.appCategory.fill
     val arranging = ui.arranging == app.component
     val dimmed = ui.arranging != null && !arranging
+    val grow by animateFloatAsState(if (focused) 1f else 0f, tween(180), label = "grow")
 
     LaunchedEffect(ui.pendingFocus) {
         if (ui.pendingFocus == app.component) {
@@ -584,10 +590,10 @@ private fun AppTile(
     // Moving a favorite reorders the row; keep the moved tile on screen.
     LaunchedEffect(index, arranging) { if (arranging) bringIntoView.bringIntoView() }
 
-    Box(modifier) {
+    Box(modifier.then(if (focused) Modifier.zIndex(1f) else Modifier)) {
         Column(
             Modifier
-                .width(TILE_W.px)
+                .width(lerp(TILE_W.toFloat(), FOCUSED_W.toFloat(), grow).px)
                 .graphicsLayer { alpha = if (dimmed) 0.4f else 1f },
             verticalArrangement = Arrangement.spacedBy(18.px),
         ) {
@@ -595,7 +601,15 @@ private fun AppTile(
                 onClick = onClick,
                 onLongClick = { if (ui.arranging == null) ui.menuFor = app.component },
                 modifier = Modifier
-                    .size(TILE_W.px, TILE_H.px)
+                    .layout { measurable, _ ->
+                        // Grows wider for real (pushing neighbours) but reports the resting height,
+                        // spilling evenly above and below so the label stays put.
+                        val w = lerp(TILE_W.toFloat(), FOCUSED_W.toFloat(), grow).px.roundToPx()
+                        val h = lerp(TILE_H.toFloat(), FOCUSED_H.toFloat(), grow).px.roundToPx()
+                        val rest = TILE_H.px.roundToPx()
+                        val placeable = measurable.measure(Constraints.fixed(w, h))
+                        layout(w, rest) { placeable.place(0, (rest - h) / 2) }
+                    }
                     .semantics { contentDescription = app.label }
                     .focusRequester(focus)
                     .then(if (extraFocus != null) Modifier.focusRequester(extraFocus) else Modifier)
@@ -622,7 +636,7 @@ private fun AppTile(
                 interactionSource = interaction,
                 shape = CardDefaults.shape(shape),
                 colors = CardDefaults.colors(containerColor = fill, focusedContainerColor = fill),
-                scale = CardDefaults.scale(focusedScale = FOCUSED_SCALE),
+                scale = CardDefaults.scale(focusedScale = 1f),
                 border = CardDefaults.border(
                     focusedBorder = Border(BorderStroke(4.px, Palette.TextBright), inset = (-4).px, shape = shape),
                 ),
@@ -634,10 +648,10 @@ private fun AppTile(
             }
             TileLabel(app.label, focused)
         }
-        // Beside the scaled-up tile (it spans -16..336), overlapping it by 12 like the design.
+        // Overlapping the focused tile (0..346) by 12 on each side, centered on it, as designed.
         if (arranging) {
-            if (canMoveLeft) MoveArrow(Icons.ChevronLeft, -1, Modifier.offset(x = (-60).px, y = 62.px))
-            if (canMoveRight) MoveArrow(Icons.ChevronRight, 1, Modifier.offset(x = 324.px, y = 62.px))
+            if (canMoveLeft) MoveArrow(Icons.ChevronLeft, -1, Modifier.offset(x = (-44).px, y = 62.px))
+            if (canMoveRight) MoveArrow(Icons.ChevronRight, 1, Modifier.offset(x = (FOCUSED_W + 44 - 56).px, y = 62.px))
         }
     }
 }
@@ -669,7 +683,7 @@ internal fun TileImage(app: AppEntry, images: AppImageSource) {
     val image by produceState(images.cachedImage(app), app) {
         if (value != null) return@produceState
         // Rendered at the focused size so the scaled-up tile stays sharp.
-        val w = with(density) { (TILE_W * FOCUSED_SCALE).px.roundToPx() }
+        val w = with(density) { FOCUSED_W.px.roundToPx() }
         value = images.loadImage(app, w, w * 9 / 16)
     }
     val current = image ?: return
@@ -696,7 +710,7 @@ private fun TileLabel(text: String, focused: Boolean) {
         // A marquee measures unbounded, so overflow is only meaningful while not scrolling.
         onTextLayout = { if (!focused) overflows = it.hasVisualOverflow },
         modifier = Modifier
-            .width(TILE_W.px)
+            .fillMaxWidth()
             .then(
                 when {
                     !overflows -> Modifier

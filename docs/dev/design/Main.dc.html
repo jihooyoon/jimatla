@@ -13,7 +13,7 @@
 <style>
 body{margin:0}
 a{color:#E8E6E1}a:hover{color:#FFFFFF}
-@keyframes tvMarquee{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(calc(-100% + 352px))}}
+@keyframes tvMarquee{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(calc(-100% + 346px))}}
 @keyframes tvPanelIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
 @keyframes tvLaunch{from{transform:scale(0.2);opacity:0;border-radius:24px}to{transform:none;opacity:1;border-radius:0}}
 @keyframes tvPop{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}
@@ -63,7 +63,7 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
             <h2 style="{{row.titleStyle}}">{{row.title}}</h2>
             <div style="font-size: 22px; color: #8A8882">{{row.meta}}</div>
           </div>
-          <div data-strip="1" class="tv-noscroll" style="position: relative; display: flex; gap: 32px; align-items: flex-start; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; padding: 24px 120px 18px; height: 230px">
+          <div data-strip="1" class="tv-noscroll" style="position: relative; display: flex; gap: 32px; align-items: flex-start; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; padding: 24px 120px 0; height: 230px">
             <sc-if value="{{row.empty}}" hint-placeholder-val="{{ false }}">
               <div style="flex: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 672px; height: 180px; border-radius: 12px; border: 2px dashed #3A3B3F; color: #8A8882; font-size: 24px; padding: 0 40px; text-align: center">Nhấn giữ một ứng dụng rồi chọn “Thêm vào ưa thích”</div>
             </sc-if>
@@ -79,12 +79,12 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
                 </button>
                 <sc-if value="{{app.arranging}}" hint-placeholder-val="{{ false }}">
                   <sc-if value="{{app.canLeft}}" hint-placeholder-val="{{ true }}">
-                    <button class="tv-arrow" tabindex="-1" aria-label="Chuyển sang trái" onClick="{{app.moveLeft}}" style="position: absolute; left: -44px; top: 71px; width: 56px; height: 56px; border-radius: 50%; border: none; padding: 0; display: flex; align-items: center; justify-content: center; background: #F4F2EE; color: #0E0F11; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 3; animation: tvNudgeL 1.2s ease-in-out infinite">
+                    <button class="tv-arrow" tabindex="-1" aria-label="Chuyển sang trái" onClick="{{app.moveLeft}}" style="position: absolute; left: -44px; top: 62px; width: 56px; height: 56px; border-radius: 50%; border: none; padding: 0; display: flex; align-items: center; justify-content: center; background: #F4F2EE; color: #0E0F11; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 3; animation: tvNudgeL 1.2s ease-in-out infinite">
                       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
                     </button>
                   </sc-if>
                   <sc-if value="{{app.canRight}}" hint-placeholder-val="{{ true }}">
-                    <button class="tv-arrow" tabindex="-1" aria-label="Chuyển sang phải" onClick="{{app.moveRight}}" style="position: absolute; right: -44px; top: 71px; width: 56px; height: 56px; border-radius: 50%; border: none; padding: 0; display: flex; align-items: center; justify-content: center; background: #F4F2EE; color: #0E0F11; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 3; animation: tvNudgeR 1.2s ease-in-out infinite">
+                    <button class="tv-arrow" tabindex="-1" aria-label="Chuyển sang phải" onClick="{{app.moveRight}}" style="position: absolute; right: -44px; top: 62px; width: 56px; height: 56px; border-radius: 50%; border: none; padding: 0; display: flex; align-items: center; justify-content: center; background: #F4F2EE; color: #0E0F11; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 3; animation: tvNudgeR 1.2s ease-in-out infinite">
                       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
                     </button>
                   </sc-if>
@@ -188,7 +188,7 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
 
       <div style="position: relative; display: flex; justify-content: center">
         <button aria-label="Cài đặt" onMouseEnter="{{hIn.set}}" onMouseLeave="{{hOut}}" onFocus="{{hIn.set}}" onBlur="{{hOut}}" style="{{btn.set}}">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 2.5v3"></path><path d="M12 18.5v3"></path><path d="M2.5 12h3"></path><path d="M18.5 12h3"></path><path d="M5.3 5.3l2.1 2.1"></path><path d="M16.6 16.6l2.1 2.1"></path><path d="M5.3 18.7l2.1-2.1"></path><path d="M16.6 7.4l2.1-2.1"></path></svg>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
         </button>
         <sc-if value="{{hv.set}}" hint-placeholder-val="{{ false }}">
           <div style="{{labelStyle}}">Cài đặt</div>
@@ -494,7 +494,7 @@ class Component extends DCLogic {
       focus: 'movies', over: {}, hover: null, panel: null, input: 0, wifiOn: true,
       favs: ['tv', 'movies', 'music', 'photos', 'browser', 'kids', 'files', 'news'],
       menu: null, arranging: null, infoApp: null, toast: null,
-      search: false, q: '', voice: false, hp: 0, clockEm: 2.7, launching: null, wall: null, custom: null,
+      search: false, q: '', voice: false, hp: 0, clockEm: 2.7, launching: null, wall: null, custom: null, clockBear: 0.05, dateBear: 0,
       notifs: [
         { id: 'n1', app: 'Hệ thống', time: '10 phút trước', title: 'Có bản cập nhật phần mềm', body: 'Cài đặt khi TV không sử dụng' },
         { id: 'n2', app: 'Phim', time: '1 giờ trước', title: 'Đã có tập mới', body: '[Tên phim] · Tập [số]' },
@@ -560,6 +560,17 @@ class Component extends DCLogic {
         if (em > 0 && Math.abs(em - this.state.clockEm) > 0.02) this.setState({ clockEm: em });
       }
     }
+    // Căn quang học: đo khoảng trống bên trái nét chữ (side bearing) của đồng hồ và dòng ngày bằng font metrics
+    try {
+      var cx = document.createElement('canvas').getContext('2d');
+      cx.font = '300 128px Manrope';
+      var cb = -cx.measureText('20:45').actualBoundingBoxLeft / 128;
+      cx.font = '400 28px Manrope';
+      var db = -cx.measureText('Thứ Năm').actualBoundingBoxLeft;
+      if (isFinite(cb) && isFinite(db) && (Math.abs(cb - this.state.clockBear) > 0.002 || Math.abs(db - this.state.dateBear) > 0.2)) {
+        this.setState({ clockBear: Math.max(0, cb), dateBear: Math.max(0, db) });
+      }
+    } catch (err) {}
     var outers = this.root.querySelectorAll('[data-lbl-outer]');
     var over = {};
     var changed = false;
@@ -568,7 +579,7 @@ class Component extends DCLogic {
       var inner = outers[i].querySelector('[data-lbl-inner]');
       if (!inner) continue;
       var w = inner.scrollWidth;
-      over[key] = w > 352 ? w : 0;
+      over[key] = w > 320 ? w : 0;
       if ((this.state.over[key] || 0) !== over[key]) changed = true;
     }
     if (changed) this.setState({ over: over });
@@ -583,7 +594,7 @@ class Component extends DCLogic {
     if (row && vp) vp.scrollTop = Math.max(0, row.offsetTop - 370);
     if (strip && wrap) {
       var pad = 120;
-      var left = wrap.offsetLeft, right = left + 352;
+      var left = wrap.offsetLeft, right = left + 346;
       if (left - pad < strip.scrollLeft) strip.scrollLeft = left - pad;
       else if (right + pad > strip.scrollLeft + strip.clientWidth) strip.scrollLeft = right + pad - strip.clientWidth;
     }
@@ -832,12 +843,14 @@ class Component extends DCLogic {
         var sel = st.focus === id;
         var isArr = arr === id;
         if (sel) focusIdx = idx;
-        var w = sel ? 352 : 320;
-        var h = sel ? 198 : 180;
+        // Tile đang chọn phóng to ~1.08: chiều dọc nở đều lên/xuống (margin âm, không đẩy nhãn),
+        // chiều ngang nở sang phải và đẩy các tile phía sau, giữ nguyên khoảng cách 32px giữa các tile
+        var w = sel ? 346 : 320;
+        var h = sel ? 194 : 180;
         var textW = over[id] || 0;
         var long = textW > 0;
         var mask = !long ? 'none' : (sel ? fadeBoth : fadeEnd);
-        var dur = long ? Math.max(3, ((textW - 352 + 28) / speed) / 0.76) : 0;
+        var dur = long ? Math.max(3, ((textW - 346 + 28) / speed) / 0.76) : 0;
         var dim = arr && !isArr;
         return {
           id: id,
@@ -907,9 +920,9 @@ class Component extends DCLogic {
             if (!was || menu || self.state.arranging || self.state.menu) return;
             self.launch(a.label, fillOf[String(a.cat)], id);
           },
-          wrapStyle: 'position: relative; flex: none; transition: opacity 160ms ease; ' + (dim ? 'filter: brightness(0.4) saturate(0.6);' : '') + (isArr ? ' z-index: 2;' : ''),
+          wrapStyle: 'position: relative; flex: none; transition: opacity 160ms ease; ' + (dim ? 'filter: brightness(0.4) saturate(0.6);' : '') + (isArr ? ' z-index: 2;' : (sel ? ' z-index: 1;' : '')),
           colStyle: 'flex: none; display: flex; flex-direction: column; gap: 18px; align-items: flex-start; width: ' + w + 'px; padding: 0; margin: 0; border: none; background: transparent; cursor: pointer; font-family: inherit; color: inherit; outline: none; touch-action: manipulation; -webkit-touch-callout: none; transition: width 180ms ease;',
-          tileStyle: 'display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: ' + w + 'px; height: ' + h + 'px; border-radius: 12px; background: ' + fillOf[String(a.cat)] + '; transition: all 180ms ease; ' + (isArr
+          tileStyle: 'display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: ' + w + 'px; height: ' + h + 'px; border-radius: 12px; background: ' + fillOf[String(a.cat)] + '; margin: ' + (sel ? '-7px 0' : '0') + '; transition: width 180ms ease, height 180ms ease, margin 180ms ease, box-shadow 180ms ease; ' + (isArr
             ? 'box-shadow: 0 0 0 4px #F4F2EE, 0 0 0 10px rgba(244,242,238,0.25), 0 20px 40px rgba(0,0,0,0.5);'
             : sel ? 'box-shadow: 0 0 0 4px #F4F2EE, 0 20px 40px rgba(0,0,0,0.5);'
             : ''),
@@ -1033,8 +1046,8 @@ class Component extends DCLogic {
       launchKey: function (e) { var k = e.key; if (k === 'Escape' || k === 'Backspace' || k === 'GoBack' || k === 'BrowserBack') { e.preventDefault(); self.closeLaunch(); } },
       // Khoảng cách chuẩn: đáy cụm đồng hồ (dòng thời tiết, y = 232+128+14+36+14+34 = 458) → đỉnh tiêu đề hàng Ưa thích (y = 160+370 = 530) = 72px.
       // Giữa các hàng: đáy nhãn của tile KHÔNG được chọn (tile 180 + 18 + nhãn 32 = 230) → đỉnh tiêu đề hàng sau = 72px.
-      // Dải tile để dư 18px đáy cho tile đang chọn phóng to, nên khoảng cách giữa các section = 72 − 18.
-      rowGap: 530 - (232 + 128 + 14 + 36 + 14 + 34) - 18,
+      // Tile đang chọn phóng to bằng transform nên không đổi chiều cao hàng → khoảng cách giữa các section = 72.
+      rowGap: 530 - (232 + 128 + 14 + 36 + 14 + 34),
       onVpScroll: function (e) {
         var t = e.currentTarget.scrollTop;
         var p = Math.round(Math.min(1, Math.max(0, t / 220)) * 100) / 100;
@@ -1045,7 +1058,10 @@ class Component extends DCLogic {
       clockStyle: (function () {
         var e = st.hp * st.hp * (3 - 2 * st.hp);
         var L = function (a, b) { return a + (b - a) * e; };
-        return 'position: absolute; left: 120px; top: ' + L(232, 74).toFixed(1) + 'px; z-index: 2; font-size: ' + L(128, 44).toFixed(1) + 'px; font-weight: ' + Math.round(L(300, 600)) + '; letter-spacing: ' + L(-4, -0.5).toFixed(2) + 'px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none;';
+        var fsz = L(128, 44);
+        // Dịch trái đúng bằng khoảng trống bên trái của số (tỉ lệ theo cỡ chữ), rồi cộng lại khoảng trống của dòng ngày khi ngày còn hiện
+        var cLeft = 120 - st.clockBear * fsz + st.dateBear * (1 - e);
+        return 'position: absolute; left: ' + cLeft.toFixed(1) + 'px; top: ' + L(232, 74).toFixed(1) + 'px; z-index: 2; font-size: ' + L(128, 44).toFixed(1) + 'px; font-weight: ' + Math.round(L(300, 600)) + '; letter-spacing: ' + L(-4, -0.5).toFixed(2) + 'px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none;';
       })(),
       dateStyle: (function () {
         var e = st.hp * st.hp * (3 - 2 * st.hp);
@@ -1065,7 +1081,8 @@ class Component extends DCLogic {
       })(),
       pillWrap: (function () {
         var e = st.hp * st.hp * (3 - 2 * st.hp);
-        return 'position: absolute; top: 64px; left: ' + (120 + (st.clockEm * 44 + 32) * e).toFixed(1) + 'px; z-index: 2;';
+        var smallClockLeft = 120 - st.clockBear * 44;
+        return 'position: absolute; top: 64px; left: ' + (120 + (smallClockLeft - 120 + st.clockEm * 44 + 32) * e).toFixed(1) + 'px; z-index: 2;';
       })(),
 
       searchPill: 'display: flex; align-items: center; gap: 14px; height: 64px; box-sizing: border-box; padding: 0 32px 0 24px; border-radius: 32px; cursor: pointer; font-family: inherit; font-size: 24px; font-weight: 500; outline: none; transition: all 140ms ease; ' +
