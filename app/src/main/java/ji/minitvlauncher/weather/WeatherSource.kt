@@ -6,7 +6,13 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
+import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Bundle
+import android.os.Looper
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.coroutines.resume
 import ji.minitvlauncher.data.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -27,7 +33,7 @@ class WeatherSource(private val context: Context, private val settings: Settings
     suspend fun refresh(now: Long, locale: Locale): Weather? = withContext(Dispatchers.IO) {
         val old = cached()
         if (old != null && now - old.fetchedAt < REFRESH_MS) return@withContext old
-        val location = lastLocation() ?: return@withContext old
+        val location = lastLocation() ?: freshLocation() ?: return@withContext old
         val place = placeName(location, locale) ?: old?.place
         val fresh = runCatching { fetchWeather(location.latitude, location.longitude, usesFahrenheit(locale), place, now) }.getOrNull()
             ?: return@withContext old
@@ -43,6 +49,37 @@ class WeatherSource(private val context: Context, private val settings: Settings
         return listOf(LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER, "fused")
             .mapNotNull { runCatching { lm.getLastKnownLocation(it) }.getOrNull() }
             .maxByOrNull { it.time }
+    }
+
+    /**
+     * After a reboot the system remembers no location until some app asks for one, so ask once:
+     * a single Wi‑Fi based fix, giving up after 15 s (or at once if location is switched off).
+     */
+    @SuppressLint("MissingPermission")
+    private suspend fun freshLocation(): Location? {
+        if (!hasLocationPermission()) return null
+        val lm = context.getSystemService(LocationManager::class.java) ?: return null
+        val provider = listOf(LocationManager.NETWORK_PROVIDER, "fused")
+            .firstOrNull { runCatching { lm.isProviderEnabled(it) }.getOrDefault(false) } ?: return null
+        return withTimeoutOrNull(15_000) {
+            suspendCancellableCoroutine { cont ->
+                val listener = object : LocationListener {
+                    override fun onLocationChanged(location: Location) {
+                        lm.removeUpdates(this)
+                        if (cont.isActive) cont.resume(location)
+                    }
+                    @Deprecated("Deprecated in Java")
+                    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
+                    override fun onProviderEnabled(provider: String) = Unit
+                    override fun onProviderDisabled(provider: String) = Unit
+                }
+                runCatching {
+                    @Suppress("DEPRECATION")
+                    lm.requestSingleUpdate(provider, listener, Looper.getMainLooper())
+                }.onFailure { if (cont.isActive) cont.resume(null) }
+                cont.invokeOnCancellation { lm.removeUpdates(listener) }
+            }
+        }
     }
 
     private fun placeName(location: Location, locale: Locale): String? = runCatching {

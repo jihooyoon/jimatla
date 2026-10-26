@@ -13,6 +13,7 @@ TV khởi động → launcher cũ hiện thoáng qua → vào recovery: "Can't 
 - BÀI HỌC: sau mỗi lần gỡ/tắt gói hệ thống phải `adb reboot` và kiểm tra TV lên bình thường rồi mới làm tiếp.
 - **ĐÃ GIẢI QUYẾT (26/10):** log xác nhận: `com.realtek.keyintercept` (persistent) crash vì không có provider `tvlauncher.widget`, provider này thuộc `com.realtek.vsmleanbacklauncher.vsmpartnercustomizer/.ConfigurationProvider`. Bắt adb trong lúc khởi động (script lặp `adb connect` 0,5 s), `install-existing` cả 13 gói → TV khởi động lại bình thường. Sau đó (người dùng đồng ý) gỡ lại 12 gói, GIỮ `vsmpartnercustomizer`, `adb reboot` có script canh: 3 phút sau khi lên 0 crash, `keyintercept` ổn định, Home = tvlauncher.
 - `vsmpartnercustomizer` → đưa vào danh sách KHÔNG ĐỤNG. Launcher mới cũng phải để gói này cài sẵn.
+- Sau sự cố, dịch vụ vị trí của TV bị TẮT (`location_providers_allowed` rỗng, trước là `gps,network`) → thời tiết không hiện. Code (26/10): khi không có last known location thì `requestSingleUpdate` qua NETWORK/fused, chờ tối đa 15 s.
 - Rescue Party đã chạy mức RESET_SETTINGS_UNTRUSTED_DEFAULTS (đặt lại cài đặt do app không phải hệ thống ghi) — có thể vài tuỳ chỉnh đã về mặc định. Appops chặn chạy nền TV360/Spotify vẫn còn (đã kiểm tra).
 - Cách cứu hộ nếu tái diễn: script trong lịch sử phiên — vòng lặp `adb connect` + `adb get-state`, bắt được thì đọc `logcat -b crash -d` rồi `cmd package install-existing`.
 
