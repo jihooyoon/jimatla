@@ -466,7 +466,7 @@ class HomeScreenScreenshotTest {
         assertEquals(tile, focusedBounds())
     }
 
-    /** Five tiles fit across: focusing the fifth must not scroll the row. */
+    /** Five tiles fit across: focusing the fifth must not scroll the row; the sixth does. */
     @Test
     fun fifthTileFocusDoesNotScrollTheRow() {
         show(apps.take(6))
@@ -476,5 +476,7 @@ class HomeScreenScreenshotTest {
         repeat(4) { press(listOf(Key.DirectionRight)) }
         shot("fifth_tile_focused")
         assertEquals("row scrolled when focusing the fifth tile", 120f, left(first), 1f)
+        press(listOf(Key.DirectionRight)) // the sixth does scroll it
+        assertTrue("row should scroll for the sixth tile", left(first) < 100f)
     }
 }

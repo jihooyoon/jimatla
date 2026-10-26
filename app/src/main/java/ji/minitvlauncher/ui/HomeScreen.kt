@@ -182,12 +182,15 @@ private const val FIRST_ROW_TOP = 530
 private const val FADE_DISTANCE = 220 // scroll over which the clock group and wallpaper fade out
 private const val TOP_BAR_BOTTOM = 64 + 64 // the bar's top + height
 internal const val SIDE = 120
-private const val TILE_W = 320
-private const val TILE_H = 180
-// The focused tile scales up 1.08 in place (design changelog 9a): it floats over the 32 px gaps
-// without moving anything; a row's first tile grows from its left edge to keep the x = 120 margin.
-private const val FOCUSED_SCALE = 1.08f
-private const val TILE_GAP = 20 // between tiles in a row (design: 32); at most 20 so five fit without scrolling (user's call)
+// Tile 312×176 with 24 px gaps (user's call; design 320×180, 32): five fit before the row's
+// 120 px right edge (120 + 5×312 + 4×24 = 1776 ≤ 1800), so only the sixth scrolls the row.
+private const val TILE_W = 312
+private const val TILE_H = 176
+// The focused tile scales up in place (design changelog 9a) without moving anything. At 1.15 it
+// grows 23.4 px each side, just meeting its neighbours across the 24 px gaps; a row's first tile
+// grows from its left edge to keep the x = 120 margin, overlapping the second (user accepted).
+private const val FOCUSED_SCALE = 1.15f
+private const val TILE_GAP = 24
 
 /** Transient home-screen state: which tile has its menu open, is being moved, or should take focus. */
 @Stable
@@ -660,8 +663,9 @@ private fun AppTile(
         }
         // 44 px outside the tile's resting edges, centred on it, as designed.
         if (arranging) {
-            if (canMoveLeft) MoveArrow(Icons.ChevronLeft, -1, Modifier.offset(x = (-44).px, y = 62.px))
-            if (canMoveRight) MoveArrow(Icons.ChevronRight, 1, Modifier.offset(x = (TILE_W + 44 - 56).px, y = 62.px))
+            val arrowTop = (TILE_H - 56) / 2
+            if (canMoveLeft) MoveArrow(Icons.ChevronLeft, -1, Modifier.offset(x = (-44).px, y = arrowTop.px))
+            if (canMoveRight) MoveArrow(Icons.ChevronRight, 1, Modifier.offset(x = (TILE_W + 44 - 56).px, y = arrowTop.px))
         }
     }
 }
