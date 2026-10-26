@@ -3,6 +3,7 @@ package ji.minitvlauncher
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.util.LruCache
@@ -20,6 +21,8 @@ data class AppEntry(
     val isLeanback: Boolean,
     /** `ApplicationInfo.category`, i.e. the app's `android:appCategory`. */
     val category: Int,
+    /** Declares itself a game, by category or the older `isGame` flag. */
+    val isGame: Boolean = category == ApplicationInfo.CATEGORY_GAME,
 )
 
 /** A card image: the app's 16:9 banner, or its icon to be drawn on a category-colored tile. */
@@ -81,5 +84,9 @@ class AppRepository(private val context: Context) : AppImageSource {
         label = loadLabel(pm).toString(),
         isLeanback = isLeanback,
         category = activityInfo.applicationInfo.category,
+        isGame = activityInfo.applicationInfo.declaresGame(),
     )
 }
+
+@Suppress("DEPRECATION") // FLAG_IS_GAME: how apps said so before appCategory
+private fun ApplicationInfo.declaresGame() = category == ApplicationInfo.CATEGORY_GAME || flags and ApplicationInfo.FLAG_IS_GAME != 0

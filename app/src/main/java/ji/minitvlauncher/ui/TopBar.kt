@@ -21,7 +21,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -66,7 +67,11 @@ data class TopButton(
  */
 @Composable
 fun TopBar(buttons: List<TopButton>, modifier: Modifier = Modifier) {
-    var focused by remember { mutableStateOf<String?>(null) }
+    // One interaction source per button id, so focus is read as state rather than from change
+    // events (which fire again, and wrongly, when a button is rebuilt with a new label).
+    val sources = remember { HashMap<String, MutableInteractionSource>() }
+    val focusFlags = buttons.map { b -> sources.getOrPut(b.id) { MutableInteractionSource() }.collectIsFocusedAsState() }
+    val focused = buttons.indices.firstOrNull { focusFlags[it].value }?.let { buttons[it].id }
     val rightEdges = remember { HashMap<String, Int>() }
 
     Box(modifier.fillMaxWidth().padding(top = 64.px, end = SIDE.px), contentAlignment = Alignment.TopEnd) {
@@ -75,9 +80,7 @@ fun TopBar(buttons: List<TopButton>, modifier: Modifier = Modifier) {
                 RoundButton(
                     b,
                     placement = Modifier.onPlaced { rightEdges[b.id] = (it.positionInParent().x + it.size.width).toInt() },
-                    focus = Modifier.onFocusChanged { state ->
-                        if (state.isFocused) focused = b.id else if (focused == b.id) focused = null
-                    },
+                    interaction = sources.getValue(b.id),
                 )
             }
         }
@@ -108,11 +111,12 @@ private val Tooltip = TextStyle(fontFamily = Manrope, fontSize = 20.tx, fontWeig
 private val Badge = TextStyle(fontFamily = Manrope, fontSize = 15.tx, fontWeight = FontWeight.SemiBold)
 
 @Composable
-private fun RoundButton(b: TopButton, placement: Modifier, focus: Modifier) {
+private fun RoundButton(b: TopButton, placement: Modifier, interaction: MutableInteractionSource) {
     Box(placement) {
         Surface(
             onClick = b.onClick,
-            modifier = focus.size(64.px).semantics { contentDescription = b.label },
+            interactionSource = interaction,
+            modifier = Modifier.size(64.px).semantics { contentDescription = b.label },
             shape = ClickableSurfaceDefaults.shape(CircleShape),
             colors = ClickableSurfaceDefaults.colors(
                 containerColor = LocalBackdrop.current.copy(alpha = 0.55f),

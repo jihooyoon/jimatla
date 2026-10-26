@@ -14,7 +14,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -45,6 +53,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 
+private val OkKeys = setOf(Key.DirectionCenter, Key.Enter, Key.NumPadEnter)
+
 enum class MenuAction { Open, AddFavorite, RemoveFavorite, Arrange, AppInfo }
 
 /**
@@ -68,9 +78,17 @@ fun AppMenu(title: String, isFavorite: Boolean, onAction: (MenuAction) -> Unit, 
         add(Triple(MenuAction.AppInfo, Icons.Info, R.string.menu_app_info))
     }
 
+    // The menu opens while OK is still held: its repeats and release land here, on "Open".
+    // Ignore OK until a fresh press starts inside the menu.
+    var armed by remember { mutableStateOf(false) }
     Popup(popupPositionProvider = position, onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
         Column(
             Modifier
+                .onPreviewKeyEvent { event ->
+                    if (event.key !in OkKeys) return@onPreviewKeyEvent false
+                    if (event.type == KeyEventType.KeyDown && event.nativeKeyEvent.repeatCount == 0) armed = true
+                    !armed
+                }
                 .width(380.px)
                 .background(Palette.Surface, RoundedCornerShape(20.px))
                 .border(BorderStroke(1.px, Palette.Border), RoundedCornerShape(20.px))

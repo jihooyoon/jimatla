@@ -26,6 +26,7 @@ import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performKeyPress
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.pressKey
@@ -51,7 +52,7 @@ import org.robolectric.Shadows.shadowOf
 import java.util.Calendar
 
 /** Renders the home screen at the TV's 1920×1080 to build/outputs/roborazzi for visual review. */
-@OptIn(ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class, com.github.takahirom.roborazzi.ExperimentalRoborazziApi::class)
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = "vi-w960dp-h540dp-land-xhdpi")
@@ -134,6 +135,8 @@ class HomeScreenScreenshotTest {
 
     /** Popups attach their window through the main looper, which the compose clock doesn't drive. */
     private fun settle() {
+        // State changed from the test thread must be announced before the clock moves.
+        androidx.compose.runtime.snapshots.Snapshot.sendApplyNotifications()
         repeat(3) {
             compose.mainClock.advanceTimeBy(500)
             shadowOf(Looper.getMainLooper()).idle()
@@ -328,7 +331,7 @@ class HomeScreenScreenshotTest {
     fun untranslatedLanguageFallsBackToEnglish() {
         show(apps.take(2))
         compose.onNodeWithText("Favorites").assertExists()
-        compose.onNodeWithText("Video & movies").assertExists()
+        compose.onNodeWithText("Apps").assertExists()
         compose.onNodeWithText("jeudi 22 octobre").assertExists()
         shot("language_fallback_fr")
     }
@@ -372,5 +375,23 @@ class HomeScreenScreenshotTest {
         owner.registry.handleLifecycleEvent(androidx.lifecycle.Lifecycle.Event.ON_PAUSE)
         settle()
         assertEquals(false, open)
+    }
+
+    /** Long-pressing OK opens the menu with OK still held: its repeats and release must not pick "Open". */
+    @Test
+    fun heldOkThatOpenedTheMenuDoesNotSelectInIt() {
+        show(apps.take(2))
+        press(listOf(Key.Menu))
+        // What reaches the menu from the press that opened it: auto-repeats, then the release.
+        val code = android.view.KeyEvent.KEYCODE_DPAD_CENTER
+        val popup = compose.onNode(isPopup())
+        popup.performKeyPress(androidx.compose.ui.input.key.KeyEvent(android.view.KeyEvent(0, 600, android.view.KeyEvent.ACTION_DOWN, code, 12)))
+        popup.performKeyPress(androidx.compose.ui.input.key.KeyEvent(android.view.KeyEvent(0, 650, android.view.KeyEvent.ACTION_UP, code, 0)))
+        settle()
+        assertEquals(emptyList<AppEntry>(), launched)
+        compose.onNode(isPopup()).assertExists()
+        // A deliberate press inside the menu still works.
+        press(listOf(Key.DirectionCenter))
+        assertEquals(listOf(apps[0]), launched)
     }
 }

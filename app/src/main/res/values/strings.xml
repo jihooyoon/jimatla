@@ -4,6 +4,8 @@
     <string name="launch_failed">Couldn\'t open %1$s</string>
 
     <string name="row_favorites">Favorites</string>
+    <string name="row_apps">Apps</string>
+    <string name="row_games">Games</string>
     <string name="favorites_empty">Press and hold an app, then choose “Add to favorites”</string>
     <plurals name="row_app_count">
         <item quantity="one">%d app</item>
@@ -89,14 +91,4 @@
     <string name="search_voice_prompt">Say an app name</string>
     <string name="close">Close</string>
 
-    <string name="cat_video">Video &amp; movies</string>
-    <string name="cat_audio">Music &amp; audio</string>
-    <string name="cat_game">Games</string>
-    <string name="cat_image">Photos</string>
-    <string name="cat_social">Social &amp; communication</string>
-    <string name="cat_news">News</string>
-    <string name="cat_productivity">Productivity &amp; tools</string>
-    <string name="cat_maps">Maps</string>
-    <string name="cat_accessibility">Accessibility</string>
-    <string name="cat_other">Other</string>
 </resources>

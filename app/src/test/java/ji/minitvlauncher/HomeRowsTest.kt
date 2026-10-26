@@ -19,26 +19,29 @@ class HomeRowsTest {
     private val music = app("Music", ApplicationInfo.CATEGORY_AUDIO)
     private val browser = app("Browser")
 
-    @Test
-    fun `favorites come first in user order and leave their category rows`() {
-        val rows = buildRows(listOf(browser, movies, music, tv), listOf(tv.component, browser.component))
+    private val chess = app("Chess", ApplicationInfo.CATEGORY_GAME)
+    private val oldGame = AppEntry(ComponentName("pkg.old", "pkg.old.Main"), "Old game", isLeanback = true, category = ApplicationInfo.CATEGORY_UNDEFINED, isGame = true)
 
-        assertEquals(
-            listOf(RowKey.Favorites, RowKey.Category(AppCategory.Video), RowKey.Category(AppCategory.Audio)),
-            rows.map { it.key },
-        )
+    @Test
+    fun `favorites come first in user order, then apps, then games`() {
+        val rows = buildRows(listOf(browser, chess, movies, music, oldGame, tv), listOf(tv.component, browser.component))
+
+        assertEquals(listOf(RowKey.Favorites, RowKey.Apps, RowKey.Games), rows.map { it.key })
         assertEquals(listOf(tv, browser), rows[0].apps)
-        assertEquals(listOf(movies), rows[1].apps)
+        // Every non-game lands in Apps, whatever category it declares (or none), in the given order.
+        assertEquals(listOf(movies, music), rows[1].apps)
+        // Games by appCategory or by the older isGame flag.
+        assertEquals(listOf(chess, oldGame), rows[2].apps)
     }
 
     @Test
-    fun `empty favorites row is kept and uninstalled favorites are skipped`() {
+    fun `empty favorites row is kept, empty apps and games rows are not`() {
         val gone = ComponentName("pkg.gone", "pkg.gone.Main")
         val rows = buildRows(listOf(browser), listOf(gone))
 
-        assertEquals(RowKey.Favorites, rows[0].key)
+        assertEquals(listOf(RowKey.Favorites, RowKey.Apps), rows.map { it.key })
         assertEquals(emptyList<AppEntry>(), rows[0].apps)
-        assertEquals(RowKey.Category(AppCategory.Other), rows[1].key)
+        assertEquals(listOf(RowKey.Favorites), buildRows(listOf(browser), listOf(browser.component)).map { it.key })
     }
 
     @Test

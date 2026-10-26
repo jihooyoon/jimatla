@@ -467,10 +467,7 @@ private fun AppRow(
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.px)) {
         Row(Modifier.padding(horizontal = SIDE.px), horizontalArrangement = Arrangement.spacedBy(20.px)) {
             Text(
-                text = when (val key = row.key) {
-                    RowKey.Favorites -> stringResource(R.string.row_favorites)
-                    is RowKey.Category -> stringResource(key.category.title)
-                },
+                text = stringResource(row.key.title),
                 style = Type.RowTitle,
                 color = if (active) Palette.TextBright else Palette.TextMuted,
                 modifier = Modifier.alignByBaseline(),
