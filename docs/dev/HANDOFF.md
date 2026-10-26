@@ -5,6 +5,13 @@ Cập nhật lần cuối: 2026-10-26. Người dùng nói tiếng Việt, xưng
 ## Mục tiêu
 Viết launcher Android TV tối giản (jimatla) thay `com.google.android.tvlauncher` (đầy quảng cáo, tốn ~150 MB RAM) trên TV của người dùng, và giảm tối đa việc TV dùng internet khi không ở trong app nào.
 
+## ⚠ SỰ CỐ TV (báo ngày sau 26/10)
+TV khởi động → launcher cũ hiện thoáng qua → vào recovery: "Can't load Android system. Your data may be corrupt", đòi factory reset. Không vào được adb (No route to host). Đây là cơ chế Rescue Party của Android: một tiến trình lõi bị crash lặp lại lúc khởi động. Chưa biết tiến trình nào vì không đọc được log.
+- Thay đổi trên TV (đều qua adb, không đụng phân vùng system): phiên trước gỡ cho user 0 các gói trong "Đã làm (26/10)" + gỡ backdrop + appops TV360/Spotify; phiên 26/10 cài/gỡ `ji.minitvlauncher`, `set-home-activity`, disable rồi enable lại `tvlauncher`. SAI SÓT: sau các thao tác đó KHÔNG khởi động lại TV để kiểm tra.
+- Nghi vấn (chưa xác minh): `tvlauncher` hoặc tiến trình đi kèm crash do thiếu gói đã gỡ, ví dụ `com.realtek.vsmleanbacklauncher.vsmpartnercustomizer` (tuỳ biến của hãng cho launcher) hoặc `com.google.android.tungsten.setupwraith`.
+- Factory reset sẽ khôi phục mọi gói hệ thống đã gỡ (chúng vẫn nằm trong /system, chỉ bị gỡ cho user 0); mất app tự cài, đăng nhập, cài đặt.
+- BÀI HỌC: sau mỗi lần gỡ/tắt gói hệ thống phải `adb reboot` và kiểm tra TV lên bình thường rồi mới làm tiếp.
+
 ## Trạng thái (26/10, cuối ngày)
 Đã code xong 7 bước theo thiết kế, mỗi bước test trên máy tính (Robolectric + ảnh chụp Roborazzi) rồi commit + push lên `main`. **CHƯA thử bất kỳ bước nào trên TV thật** — TV đang tắt, launcher cũ đang là màn Home, `ji.minitvlauncher` đã gỡ khỏi TV.
 
