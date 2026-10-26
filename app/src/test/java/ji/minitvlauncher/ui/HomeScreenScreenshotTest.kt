@@ -481,4 +481,16 @@ class HomeScreenScreenshotTest {
         press(listOf(Key.DirectionRight)) // the sixth does scroll it
         assertTrue("row should scroll for the sixth tile", left(first) < 100f)
     }
+
+    /** A tile losing focus keeps drawing above its neighbour until it has shrunk back. */
+    @Test
+    fun shrinkingTileStaysOnTopOfItsNeighbour() {
+        show(apps.take(3))
+        press(listOf(Key.DirectionRight)) // first tile (grown from its left edge, over the second) loses focus
+        compose.onNode(isRoot()).performKeyInput { pressKey(Key.DirectionLeft) }
+        compose.mainClock.advanceTimeBy(500)
+        compose.onNode(isRoot()).performKeyInput { pressKey(Key.DirectionRight) }
+        compose.mainClock.advanceTimeBy(64) // mid-shrink
+        shot("shrinking_first_tile")
+    }
 }

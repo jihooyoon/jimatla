@@ -541,7 +541,7 @@ private fun AppRow(
                             onFocused()
                         },
                         extraFocus = if (index == 0) firstTile else null,
-                        modifier = if (arranging) Modifier.zIndex(1f) else Modifier,
+                        modifier = Modifier,
                     )
                 }
             }
@@ -616,7 +616,14 @@ private fun AppTile(
     // Moving a favorite reorders the row; keep the moved tile on screen.
     LaunchedEffect(index, arranging) { if (arranging) bringIntoView.bringIntoView() }
 
-    Box(modifier.then(if (focused) Modifier.zIndex(1f) else Modifier)) {
+    // Layered by how large the tile is drawn, not just by focus: a tile that has lost focus is
+    // still shrinking for 180 ms and must stay above its neighbours until it is back to size.
+    val layer = when {
+        focused || arranging -> 2f
+        scale > 1.001f -> 1f
+        else -> 0f
+    }
+    Box(modifier.zIndex(layer)) {
         Column(
             Modifier
                 .width(TILE_W.px)
