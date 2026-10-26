@@ -44,7 +44,7 @@ import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import ji.minitvlauncher.R
-import ji.minitvlauncher.ui.theme.Manrope
+import ji.minitvlauncher.ui.theme.appFont
 import ji.minitvlauncher.ui.theme.Palette
 import ji.minitvlauncher.ui.theme.Type
 import ji.minitvlauncher.ui.theme.px
@@ -97,7 +97,7 @@ fun AppMenu(title: String, isFavorite: Boolean, onAction: (MenuAction) -> Unit, 
         ) {
             Text(
                 title,
-                style = TextStyle(fontFamily = Manrope, fontSize = 20.tx),
+                style = TextStyle(fontFamily = appFont(20), fontSize = 20.tx),
                 color = Palette.TextDim,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

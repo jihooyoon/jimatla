@@ -15,6 +15,9 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.stringResource
 import android.graphics.Paint
 import android.graphics.Rect
+import android.graphics.Typeface
+import androidx.compose.runtime.derivedStateOf
+import kotlin.math.roundToInt
 import androidx.core.content.res.ResourcesCompat
 import ji.minitvlauncher.R
 import ji.minitvlauncher.weather.Condition
@@ -34,7 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.util.lerp
 import androidx.tv.material3.Text
-import ji.minitvlauncher.ui.theme.Manrope
+import ji.minitvlauncher.ui.theme.appFont
 import ji.minitvlauncher.ui.theme.Palette
 import ji.minitvlauncher.ui.theme.Type
 import ji.minitvlauncher.ui.theme.px
@@ -43,21 +46,27 @@ import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 
-private val ClockLarge = TextStyle(
-    fontFamily = Manrope,
+// As rows scroll the clock goes from 128 px / weight 300 / -4 px spacing to 44 px / 600 / -0.5 px,
+// with the optical size following the size. Weight and spacing need new text layout, so they move
+// in CLOCK_STEPS steps; size and position follow scrolling smoothly through the graphics layer.
+private const val CLOCK_STEPS = 12
+
+private fun clockSize(e: Float) = lerp(128f, 44f, e)
+private fun clockWeight(e: Float) = lerp(300f, 600f, e).roundToInt()
+private fun clockSpacing(e: Float) = lerp(-4f, -0.5f, e)
+
+/** The clock is always laid out at 128 px and scaled down; spacing is expressed in those units. */
+private fun clockStyle(e: Float) = TextStyle(
+    fontFamily = appFont(clockWeight(e), clockSize(e).roundToInt()),
+    fontWeight = FontWeight(clockWeight(e)),
     fontSize = 128.tx,
     lineHeight = 128.tx,
-    fontWeight = FontWeight(300),
-    letterSpacing = (-4).tx,
+    letterSpacing = (clockSpacing(e) * 128f / clockSize(e)).tx,
     fontFeatureSettings = "tnum",
     lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
 )
-private val ClockSmall = ClockLarge.copy(fontSize = 44.tx, lineHeight = 44.tx, fontWeight = FontWeight(600), letterSpacing = (-0.5).tx)
 
-/**
- * Big clock that shrinks into the top-left corner as rows scroll up. Instead of re-laying out text at
- * every size and weight, a light large rendering and a bold small one are scaled and cross-faded.
- */
+/** Big clock that shrinks into the top-left corner as rows scroll up, with the date and weather. */
 @Composable
 internal fun Clock(collapse: () -> Float, now: () -> Date, weather: Weather? = null) {
     val context = LocalContext.current
@@ -73,20 +82,31 @@ internal fun Clock(collapse: () -> Float, now: () -> Date, weather: Weather? = n
     }
     val time = timeFormat.format(date)
 
-    fun size(e: Float) = lerp(128f, 44f, e)
+    fun size(e: Float) = clockSize(e)
     fun top(e: Float) = lerp(232f, 74f, e)
     val dateText = dateFormat.format(date)
-    val ink = rememberInk(time, dateText)
-    // Optical alignment: digits have a wide left side bearing. Shift each rendering left by its own
-    // bearing so the ink starts where the date's ink does, and at x = 120 (the rows' edge) once small.
-    fun left(bearingEm: Float, e: Float) = SIDE - bearingEm * size(e) + ink.dateBearing * (1f - e)
+    val step by remember { derivedStateOf { (collapse() * CLOCK_STEPS).roundToInt() / CLOCK_STEPS.toFloat() } }
+    val ink = rememberInk(time, dateText, step)
 
     Box(Modifier.fillMaxSize()) {
-        // Compose sets the trimmed line lower than CSS line-height: 1 does; lift the digits so their
-        // baseline lands where the design's does (345 at 128 px, from Manrope's 2132/600 metrics).
-        fun digitsTop(e: Float) = top(e) - BASELINE_LIFT * size(e)
-        ClockText(time, ClockLarge, collapse) { e -> ClockPlace(left(ink.largeBearing, e), digitsTop(e), size(e) / 128f, 1f - e) }
-        ClockText(time, ClockSmall, collapse) { e -> ClockPlace(left(ink.smallBearing, e), digitsTop(e), size(e) / 44f, e) }
+        Text(
+            text = time,
+            style = clockStyle(step),
+            color = Palette.Text,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.graphicsLayer {
+                val e = collapse()
+                transformOrigin = TransformOrigin(0f, 0f)
+                // Optical alignment: shift left by the digits' own left side bearing so their ink
+                // starts where the date's does, and at x = 120 (the rows' edge) once small.
+                translationX = (SIDE - ink.clockBearing * size(e) + ink.dateBearing * (1f - e)).px.toPx()
+                // Compose trims the line to the font's ascent; CSS line-height: 1 centres it instead.
+                translationY = (top(e) - ink.baselineLift * size(e)).px.toPx()
+                scaleX = size(e) / 128f
+                scaleY = scaleX
+            },
+        )
         Text(
             text = dateText,
             style = Type.Date,
@@ -113,9 +133,7 @@ internal fun Clock(collapse: () -> Float, now: () -> Date, weather: Weather? = n
     }
 }
 
-private const val BASELINE_LIFT = 24f / 128f
-
-private val WeatherText = TextStyle(fontFamily = Manrope, fontSize = 24.tx, lineHeight = 34.tx)
+private val WeatherText = TextStyle(fontFamily = appFont(24), fontSize = 24.tx, lineHeight = 34.tx)
 private const val STALE_MS = 2 * 60 * 60 * 1000L
 
 /** "☁ 24°  Nhiều mây  ·  Hà Nội  ·  27° / 21°", plus when it was fetched if that was a while ago. */
@@ -149,64 +167,57 @@ private fun WeatherLine(weather: Weather, now: Long, modifier: Modifier) {
     }
 }
 
-private class ClockPlace(val left: Float, val top: Float, val scale: Float, val alpha: Float)
-
 /**
- * Left side bearings measured from the font itself (Paint.getTextBounds), per string: the first
- * digit decides it. Large and small clocks are measured at their own weight and spacing.
+ * Measured from the font itself with Paint, as the clock is drawn at this step: the left side
+ * bearing (per string, since the first digit decides it), the date's bearing, and how far to lift
+ * the line so the baseline sits where CSS line-height: 1 puts it, all in units of the font size.
  */
-private class Ink(val largeBearing: Float, val smallBearing: Float, val dateBearing: Float, val smallWidth: Float)
+private class Ink(val clockBearing: Float, val dateBearing: Float, val baselineLift: Float)
+
+private fun flexPaint(typeface: Typeface?, size: Float, weight: Int, spacingPx: Float = 0f, tabular: Boolean = false) =
+    Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        this.typeface = typeface
+        textSize = size
+        fontVariationSettings = "'wght' $weight, 'opsz' ${size.roundToInt().coerceIn(14, 128)}"
+        letterSpacing = spacingPx / size
+        if (tabular) fontFeatureSettings = "tnum"
+    }
+
+private fun Paint.leftBearing(text: String) =
+    if (text.isEmpty()) 0f else Rect().also { getTextBounds(text, 0, text.length, it) }.left.coerceAtLeast(0).toFloat()
 
 @Composable
-private fun rememberInk(time: String, date: String): Ink {
+private fun rememberFlexTypeface(): Typeface? {
     val context = LocalContext.current
-    val typeface = remember { runCatching { ResourcesCompat.getFont(context, R.font.manrope) }.getOrNull() }
-    return remember(time, date, typeface) {
-        fun paint(size: Float, weight: Int, spacingPx: Float, tabular: Boolean) = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            this.typeface = typeface
-            textSize = size
-            fontVariationSettings = "'wght' $weight"
-            letterSpacing = spacingPx / size
-            if (tabular) fontFeatureSettings = "tnum"
-        }
-        fun bearing(p: Paint, text: String) = Rect().also { p.getTextBounds(text, 0, text.length, it) }.left.coerceAtLeast(0).toFloat()
-        val large = paint(128f, 300, -4f, true)
-        val small = paint(44f, 600, -0.5f, true)
+    return remember { runCatching { ResourcesCompat.getFont(context, R.font.google_sans_flex) }.getOrNull() }
+}
+
+@Composable
+private fun rememberInk(time: String, date: String, step: Float): Ink {
+    val typeface = rememberFlexTypeface()
+    return remember(time, date, step, typeface) {
+        // Laid out at 128 with the step's weight, spacing and optical size, as the Text is.
+        val clock = flexPaint(typeface, 128f, clockWeight(step), clockSpacing(step) * 128f / clockSize(step), tabular = true)
+            .apply { fontVariationSettings = "'wght' ${clockWeight(step)}, 'opsz' ${clockSize(step).roundToInt()}" }
+        val m = clock.fontMetrics
         Ink(
-            largeBearing = bearing(large, time) / 128f,
-            smallBearing = bearing(small, time) / 44f,
-            dateBearing = bearing(paint(28f, 400, 0f, false), date),
-            smallWidth = small.measureText(time),
+            clockBearing = clock.leftBearing(time) / 128f,
+            dateBearing = flexPaint(typeface, 28f, 400).leftBearing(date),
+            baselineLift = ((m.descent - m.ascent) / 128f - 1f) / 2f,
         )
     }
 }
 
-/** Where the search pill sits beside the shrunken clock: past its ink, plus 32. */
+/** Where the search pill sits beside the shrunken clock: past its ink, plus 32 (design px). */
 @Composable
 internal fun collapsedPillShift(now: () -> Date): Float {
     val context = LocalContext.current
     val locale = LocalConfiguration.current.locales[0]
-    val time = remember(locale) { SimpleDateFormat(if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm", locale) }.format(now())
-    val ink = rememberInk(time, "")
-    return -ink.smallBearing * 44f + ink.smallWidth + 32f
-}
-
-@Composable
-private fun ClockText(time: String, style: TextStyle, collapse: () -> Float, place: (Float) -> ClockPlace) {
-    Text(
-        text = time,
-        style = style,
-        color = Palette.Text,
-        maxLines = 1,
-        softWrap = false,
-        modifier = Modifier.graphicsLayer {
-            val p = place(collapse())
-            transformOrigin = TransformOrigin(0f, 0f)
-            translationX = p.left.px.toPx()
-            translationY = p.top.px.toPx()
-            scaleX = p.scale
-            scaleY = p.scale
-            alpha = p.alpha
-        },
-    )
+    val format = remember(locale) { SimpleDateFormat(if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm", locale) }
+    val time = format.format(now())
+    val typeface = rememberFlexTypeface()
+    return remember(time, typeface) {
+        val small = flexPaint(typeface, 44f, clockWeight(1f), clockSpacing(1f), tabular = true)
+        -small.leftBearing(time) + small.measureText(time) + 32f
+    }
 }

@@ -44,7 +44,7 @@ import androidx.tv.material3.Text
 import ji.minitvlauncher.R
 import ji.minitvlauncher.system.NetKind
 import ji.minitvlauncher.system.NetStatus
-import ji.minitvlauncher.ui.theme.Manrope
+import ji.minitvlauncher.ui.theme.appFont
 import ji.minitvlauncher.ui.theme.Palette
 import ji.minitvlauncher.ui.theme.Type
 import ji.minitvlauncher.ui.theme.px
@@ -110,8 +110,8 @@ fun TopBar(buttons: List<TopButton>, modifier: Modifier = Modifier) {
     }
 }
 
-private val Tooltip = TextStyle(fontFamily = Manrope, fontSize = 20.tx, fontWeight = FontWeight.Medium)
-private val Badge = TextStyle(fontFamily = Manrope, fontSize = 15.tx, fontWeight = FontWeight.SemiBold)
+private val Tooltip = TextStyle(fontFamily = appFont(20), fontSize = 20.tx, fontWeight = FontWeight.Medium)
+private val Badge = TextStyle(fontFamily = appFont(15), fontSize = 15.tx, fontWeight = FontWeight.SemiBold)
 
 @Composable
 private fun RoundButton(b: TopButton, placement: Modifier, interaction: MutableInteractionSource) {

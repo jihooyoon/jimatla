@@ -9,7 +9,7 @@
 <x-dc>
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@100..900&amp;display=swap" rel="stylesheet">
 <style>
 body{margin:0}
 a{color:#E8E6E1}a:hover{color:#FFFFFF}
@@ -32,7 +32,7 @@ a{color:#E8E6E1}a:hover{color:#FFFFFF}
 .tv-noscroll::-webkit-scrollbar{display:none}
 </style>
 </helmet>
-<div ref="{{rootRef}}" style="position: relative; width: 1920px; height: 1080px; background: {{bg}}; color: #E8E6E1; font-family: Manrope, system-ui, sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none">
+<div ref="{{rootRef}}" style="position: relative; width: 1920px; height: 1080px; background: {{bg}}; color: #E8E6E1; font-family: 'Google Sans Flex', system-ui, sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none">
 
   <div aria-hidden="true" style="{{wallLayer}}">
    <div style="{{wallBox}}">
@@ -563,9 +563,9 @@ class Component extends DCLogic {
     // Căn quang học: đo khoảng trống bên trái nét chữ (side bearing) của đồng hồ và dòng ngày bằng font metrics
     try {
       var cx = document.createElement('canvas').getContext('2d');
-      cx.font = '300 128px Manrope';
+      cx.font = '300 128px "Google Sans Flex"';
       var cb = -cx.measureText('20:45').actualBoundingBoxLeft / 128;
-      cx.font = '400 28px Manrope';
+      cx.font = '400 28px "Google Sans Flex"';
       var db = -cx.measureText('Thứ Năm').actualBoundingBoxLeft;
       if (isFinite(cb) && isFinite(db) && (Math.abs(cb - this.state.clockBear) > 0.002 || Math.abs(db - this.state.dateBear) > 0.2)) {
         this.setState({ clockBear: Math.max(0, cb), dateBear: Math.max(0, db) });
@@ -823,10 +823,13 @@ class Component extends DCLogic {
     var favSet = {};
     favs.forEach(function (id) { favSet[id] = true; });
     var rowDefs = [{ key: 'fav', title: 'Ưa thích', apps: favs.map(function (id) { return byId[id]; }), isFav: true }];
-    catMeta.forEach(function (c) {
-      var apps = allApps.filter(function (a) { return a.cat === c.key && !favSet[a.id]; });
-      if (apps.length) rowDefs.push({ key: 'cat-' + c.key, title: c.title, apps: apps });
-    });
+    // Chỉ 2 nhóm: Trò chơi (appCategory = game) và Ứng dụng (mọi app còn lại, kể cả app không khai báo). Sắp xếp theo tên.
+    var byName = function (x, y) { return x.label.localeCompare(y.label, 'vi'); };
+    var notFav = allApps.filter(function (a) { return !favSet[a.id]; });
+    var appsRow = notFav.filter(function (a) { return a.cat !== 'game'; }).sort(byName);
+    var gamesRow = notFav.filter(function (a) { return a.cat === 'game'; }).sort(byName);
+    if (appsRow.length) rowDefs.push({ key: 'apps', title: 'Ứng dụng', apps: appsRow });
+    if (gamesRow.length) rowDefs.push({ key: 'games', title: 'Trò chơi', apps: gamesRow });
 
     var over = st.over;
     var speed = this.props.marqueeSpeed ?? 60;
@@ -1148,7 +1151,7 @@ class Component extends DCLogic {
       panel: { wall: st.panel === 'wall', notif: st.panel === 'notif', input: st.panel === 'input', net: st.panel === 'net', bt: st.panel === 'bt', info: st.panel === 'info' },
       info: {
         label: infoApp ? infoApp.label : '',
-        cat: infoApp ? (infoApp.cat ? catTitle[infoApp.cat] + ' (' + infoApp.cat + ')' : 'Không khai báo → xếp vào “Khác”') : '',
+        cat: infoApp ? (infoApp.cat === 'game' ? 'Trò chơi (game)' : 'Ứng dụng' + (infoApp.cat ? ' (khai báo: ' + infoApp.cat + ')' : ' (không khai báo)')) : '',
         bannerStyle: 'display: flex; align-items: center; justify-content: center; width: 320px; height: 180px; border-radius: 16px; background: ' + (infoApp ? fillOf[String(infoApp.cat)] : '#3A3B40') + ';'
       },
 

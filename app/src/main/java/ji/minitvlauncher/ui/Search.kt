@@ -71,7 +71,7 @@ import ji.minitvlauncher.AppEntry
 import ji.minitvlauncher.R
 import ji.minitvlauncher.appCategory
 import ji.minitvlauncher.matchesQuery
-import ji.minitvlauncher.ui.theme.Manrope
+import ji.minitvlauncher.ui.theme.appFont
 import ji.minitvlauncher.ui.theme.Palette
 import ji.minitvlauncher.ui.theme.TILE_RADIUS
 import ji.minitvlauncher.ui.theme.px
@@ -81,11 +81,11 @@ import ji.minitvlauncher.ui.theme.tx
 private val VoiceKeys = setOf(Key.Search, Key.VoiceAssist, Key.Assist)
 private const val VOICE_KEY_WINDOW_MS = 3_000L
 
-private val PillText = TextStyle(fontFamily = Manrope, fontSize = 24.tx, fontWeight = FontWeight.Medium)
-private val Query = TextStyle(fontFamily = Manrope, fontSize = 28.tx, color = Palette.TextBright)
-private val ResultTitle = TextStyle(fontFamily = Manrope, fontSize = 26.tx, fontWeight = FontWeight.Medium)
-private val NoResults = TextStyle(fontFamily = Manrope, fontSize = 30.tx)
-private val ResultLabel = TextStyle(fontFamily = Manrope, fontSize = 22.tx, fontWeight = FontWeight.Medium)
+private val PillText = TextStyle(fontFamily = appFont(24), fontSize = 24.tx, fontWeight = FontWeight.Medium)
+private val Query = TextStyle(fontFamily = appFont(28), fontSize = 28.tx, color = Palette.TextBright)
+private val ResultTitle = TextStyle(fontFamily = appFont(26), fontSize = 26.tx, fontWeight = FontWeight.Medium)
+private val NoResults = TextStyle(fontFamily = appFont(30), fontSize = 30.tx)
+private val ResultLabel = TextStyle(fontFamily = appFont(22), fontSize = 22.tx, fontWeight = FontWeight.Medium)
 
 /** The "Search" pill at the top left; the home screen slides it beside the shrunken clock. */
 @Composable

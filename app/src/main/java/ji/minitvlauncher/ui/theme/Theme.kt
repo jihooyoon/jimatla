@@ -44,23 +44,36 @@ object Palette {
     val Ok = Color(0xFF9FD3B5)
 }
 
-// Single variable font file; each weight is an instance of the wght axis (API 26+).
-private fun manrope(weight: Int) = Font(
-    R.font.manrope,
+/*
+ * Google Sans Flex, one variable file (wght 300–700, opsz 14–128). Browsers pick the optical size
+ * from the font size; Android doesn't, so each text size gets its own family with opsz = size.
+ */
+private val families = HashMap<Pair<Int, Int>, FontFamily>()
+
+private fun flex(weight: Int, opsz: Int) = Font(
+    R.font.google_sans_flex,
     weight = FontWeight(weight),
-    variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
+    variationSettings = FontVariation.Settings(FontVariation.weight(weight), FontVariation.Setting("opsz", opsz.toFloat())),
 )
 
-val Manrope = FontFamily((200..800 step 100).map(::manrope))
+/** The UI face at [sizePx] design pixels, in every weight the design uses. */
+fun appFont(sizePx: Int): FontFamily {
+    val opsz = sizePx.coerceIn(14, 128)
+    return families.getOrPut(0 to opsz) { FontFamily((300..700 step 100).map { flex(it, opsz) }) }
+}
+
+/** A single weight at a given optical size, for the clock's continuous weight change. */
+fun appFont(weight: Int, opsz: Int): FontFamily =
+    families.getOrPut(weight to opsz.coerceIn(14, 128)) { FontFamily(flex(weight, opsz.coerceIn(14, 128))) }
 
 object Type {
-    val RowTitle = TextStyle(fontFamily = Manrope, fontSize = 30.tx, lineHeight = 40.tx, fontWeight = FontWeight.Medium)
-    val RowMeta = TextStyle(fontFamily = Manrope, fontSize = 22.tx)
-    val TileLabel = TextStyle(fontFamily = Manrope, fontSize = 24.tx, lineHeight = 32.tx, fontWeight = FontWeight.Medium)
-    val Date = TextStyle(fontFamily = Manrope, fontSize = 28.tx, lineHeight = 36.tx)
-    val Hint = TextStyle(fontFamily = Manrope, fontSize = 24.tx)
-    val MenuItem = TextStyle(fontFamily = Manrope, fontSize = 24.tx, fontWeight = FontWeight.Medium)
-    val Pill = TextStyle(fontFamily = Manrope, fontSize = 22.tx)
+    val RowTitle = TextStyle(fontFamily = appFont(30), fontSize = 30.tx, lineHeight = 40.tx, fontWeight = FontWeight.Medium)
+    val RowMeta = TextStyle(fontFamily = appFont(22), fontSize = 22.tx)
+    val TileLabel = TextStyle(fontFamily = appFont(24), fontSize = 24.tx, lineHeight = 32.tx, fontWeight = FontWeight.Medium)
+    val Date = TextStyle(fontFamily = appFont(28), fontSize = 28.tx, lineHeight = 36.tx)
+    val Hint = TextStyle(fontFamily = appFont(24), fontSize = 24.tx)
+    val MenuItem = TextStyle(fontFamily = appFont(24), fontSize = 24.tx, fontWeight = FontWeight.Medium)
+    val Pill = TextStyle(fontFamily = appFont(22), fontSize = 22.tx)
 }
 
 @Composable

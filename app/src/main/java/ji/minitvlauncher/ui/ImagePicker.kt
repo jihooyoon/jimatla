@@ -40,7 +40,7 @@ import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import ji.minitvlauncher.R
-import ji.minitvlauncher.ui.theme.Manrope
+import ji.minitvlauncher.ui.theme.appFont
 import ji.minitvlauncher.ui.theme.Palette
 import ji.minitvlauncher.ui.theme.TILE_RADIUS
 import ji.minitvlauncher.ui.theme.px
@@ -65,7 +65,7 @@ fun ImagePicker(images: List<Uri>, thumbnail: suspend (Uri) -> ImageBitmap?, onP
         ) {
             PanelHeader(stringResource(R.string.wallpaper), stringResource(R.string.picker_title))
             if (images.isEmpty()) {
-                Text(stringResource(R.string.picker_empty), style = TextStyle(fontFamily = Manrope, fontSize = 26.tx), color = Palette.TextMuted)
+                Text(stringResource(R.string.picker_empty), style = TextStyle(fontFamily = appFont(26), fontSize = 26.tx), color = Palette.TextMuted)
             }
             LazyVerticalGrid(
                 columns = GridCells.Fixed(5),

@@ -55,7 +55,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import ji.minitvlauncher.system.InputSignal
 import ji.minitvlauncher.system.NotificationItem
 import ji.minitvlauncher.system.TvInputItem
-import ji.minitvlauncher.ui.theme.Manrope
+import ji.minitvlauncher.ui.theme.appFont
 import ji.minitvlauncher.ui.theme.Palette
 import ji.minitvlauncher.ui.theme.px
 import ji.minitvlauncher.ui.theme.tx
@@ -95,13 +95,13 @@ fun SidePanel(onDismiss: () -> Unit, content: @Composable ColumnScope.(first: Fo
     }
 }
 
-private val Eyebrow = TextStyle(fontFamily = Manrope, fontSize = 20.tx, letterSpacing = 3.tx)
-private val PanelTitle = TextStyle(fontFamily = Manrope, fontSize = 44.tx, fontWeight = FontWeight.Medium)
-private val RowTitle = TextStyle(fontFamily = Manrope, fontSize = 26.tx, fontWeight = FontWeight.Medium)
-private val RowTitleLarge = TextStyle(fontFamily = Manrope, fontSize = 28.tx, fontWeight = FontWeight.Medium)
-private val RowSub = TextStyle(fontFamily = Manrope, fontSize = 20.tx)
-private val RowMeta = TextStyle(fontFamily = Manrope, fontSize = 18.tx)
-private val Ghost = TextStyle(fontFamily = Manrope, fontSize = 20.tx, fontWeight = FontWeight.Medium)
+private val Eyebrow = TextStyle(fontFamily = appFont(20), fontSize = 20.tx, letterSpacing = 3.tx)
+private val PanelTitle = TextStyle(fontFamily = appFont(44), fontSize = 44.tx, fontWeight = FontWeight.Medium)
+private val RowTitle = TextStyle(fontFamily = appFont(26), fontSize = 26.tx, fontWeight = FontWeight.Medium)
+private val RowTitleLarge = TextStyle(fontFamily = appFont(28), fontSize = 28.tx, fontWeight = FontWeight.Medium)
+private val RowSub = TextStyle(fontFamily = appFont(20), fontSize = 20.tx)
+private val RowMeta = TextStyle(fontFamily = appFont(18), fontSize = 18.tx)
+private val Ghost = TextStyle(fontFamily = appFont(20), fontSize = 20.tx, fontWeight = FontWeight.Medium)
 
 @Composable
 fun PanelHeader(eyebrow: String, title: String) {
@@ -211,7 +211,7 @@ fun NotificationPanel(
             }
         }
         if (items.isEmpty()) {
-            Text(stringResource(R.string.notifications_empty), style = TextStyle(fontFamily = Manrope, fontSize = 24.tx), color = Palette.TextDim)
+            Text(stringResource(R.string.notifications_empty), style = TextStyle(fontFamily = appFont(24), fontSize = 24.tx), color = Palette.TextDim)
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.px)) {
             items.forEachIndexed { i, n ->

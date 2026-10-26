@@ -40,15 +40,15 @@ import androidx.tv.material3.Text
 import ji.minitvlauncher.R
 import ji.minitvlauncher.wallpaper.WallpaperChoice
 import ji.minitvlauncher.wallpaper.WallpaperPipeline
-import ji.minitvlauncher.ui.theme.Manrope
+import ji.minitvlauncher.ui.theme.appFont
 import ji.minitvlauncher.ui.theme.Palette
 import ji.minitvlauncher.ui.theme.TILE_RADIUS
 import ji.minitvlauncher.ui.theme.px
 import ji.minitvlauncher.ui.theme.tx
 
-private val Sub = TextStyle(fontFamily = Manrope, fontSize = 20.tx)
-private val Caption = TextStyle(fontFamily = Manrope, fontSize = 20.tx)
-private val PickLabel = TextStyle(fontFamily = Manrope, fontSize = 22.tx, fontWeight = FontWeight.Medium)
+private val Sub = TextStyle(fontFamily = appFont(20), fontSize = 20.tx)
+private val Caption = TextStyle(fontFamily = appFont(20), fontSize = 20.tx)
+private val PickLabel = TextStyle(fontFamily = appFont(22), fontSize = 22.tx, fontWeight = FontWeight.Medium)
 
 /** Samples, no picture, the custom picture if any, and the button to pick a new one. */
 @Composable
