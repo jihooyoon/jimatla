@@ -74,8 +74,11 @@ internal fun Clock(collapse: () -> Float, now: () -> Date, weather: Weather? = n
     fun top(e: Float) = lerp(232f, 74f, e)
 
     Box(Modifier.fillMaxSize()) {
-        ClockText(time, ClockLarge, collapse) { e -> Triple(top(e), size(e) / 128f, 1f - e) }
-        ClockText(time, ClockSmall, collapse) { e -> Triple(top(e), size(e) / 44f, e) }
+        // Compose sets the trimmed line lower than CSS line-height: 1 does; lift the digits so their
+        // baseline lands where the design's does (345 at 128 px, from Manrope's 2132/600 metrics).
+        fun digitsTop(e: Float) = top(e) - BASELINE_LIFT * size(e)
+        ClockText(time, ClockLarge, collapse) { e -> Triple(digitsTop(e), size(e) / 128f, 1f - e) }
+        ClockText(time, ClockSmall, collapse) { e -> Triple(digitsTop(e), size(e) / 44f, e) }
         Text(
             text = dateFormat.format(date),
             style = Type.Date,
@@ -101,6 +104,8 @@ internal fun Clock(collapse: () -> Float, now: () -> Date, weather: Weather? = n
         }
     }
 }
+
+private const val BASELINE_LIFT = 24f / 128f
 
 private val WeatherText = TextStyle(fontFamily = Manrope, fontSize = 24.tx, lineHeight = 34.tx)
 private const val STALE_MS = 2 * 60 * 60 * 1000L
