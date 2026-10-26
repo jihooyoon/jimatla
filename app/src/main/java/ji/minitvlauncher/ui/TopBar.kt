@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -67,21 +68,23 @@ data class TopButton(
  */
 @Composable
 fun TopBar(buttons: List<TopButton>, modifier: Modifier = Modifier) {
-    // One interaction source per button id, so focus is read as state rather than from change
-    // events (which fire again, and wrongly, when a button is rebuilt with a new label).
-    val sources = remember { HashMap<String, MutableInteractionSource>() }
-    val focusFlags = buttons.map { b -> sources.getOrPut(b.id) { MutableInteractionSource() }.collectIsFocusedAsState() }
-    val focused = buttons.indices.firstOrNull { focusFlags[it].value }?.let { buttons[it].id }
     val rightEdges = remember { HashMap<String, Int>() }
+    // Focus is read as state from each button's interaction source rather than from change
+    // events, which fire again (and wrongly) when a button is rebuilt with a new label.
+    var focused: String? = null
 
     Box(modifier.fillMaxWidth().padding(top = 64.px, end = SIDE.px), contentAlignment = Alignment.TopEnd) {
         Row(horizontalArrangement = Arrangement.spacedBy(20.px)) {
             buttons.forEach { b ->
-                RoundButton(
-                    b,
-                    placement = Modifier.onPlaced { rightEdges[b.id] = (it.positionInParent().x + it.size.width).toInt() },
-                    interaction = sources.getValue(b.id),
-                )
+                key(b.id) {
+                    val interaction = remember { MutableInteractionSource() }
+                    if (interaction.collectIsFocusedAsState().value) focused = b.id
+                    RoundButton(
+                        b,
+                        placement = Modifier.onPlaced { rightEdges[b.id] = (it.positionInParent().x + it.size.width).toInt() },
+                        interaction = interaction,
+                    )
+                }
             }
         }
         val current = buttons.firstOrNull { it.id == focused }
