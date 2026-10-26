@@ -163,6 +163,10 @@ data class SystemStatus(
     val notifications: List<NotificationItem>? = null,
     val hasSystemNotificationPanel: Boolean = false,
     val inputs: List<TvInputItem> = emptyList(),
+    /** Connected Bluetooth accessories other than remotes. */
+    val bluetoothDevices: List<String> = emptyList(),
+    /** Id of the input last chosen from the launcher (Android can't say which one is on). */
+    val lastInput: String? = null,
 )
 
 private enum class Panel { Inputs, Notifications, Wallpaper }
@@ -285,6 +289,7 @@ fun HomeScreen(
         )
         Panel.Inputs -> InputPanel(
             status.inputs,
+            status.lastInput,
             onPick = { ui.panel = null; actions.switchInput(it) },
             onDismiss = { ui.panel = null },
         )
@@ -322,7 +327,13 @@ private fun topButtons(status: SystemStatus, actions: HomeActions, ui: HomeUi): 
     if (status.inputs.isNotEmpty()) {
         add(TopButton("input", Icons.Input, stringResource(R.string.inputs), onClick = { ui.panel = Panel.Inputs }))
     }
-    add(TopButton("bt", Icons.Bluetooth, stringResource(R.string.bluetooth), onClick = { actions.openSystem(SystemScreen.Bluetooth) }))
+    val bt = status.bluetoothDevices
+    val btLabel = when (bt.size) {
+        0 -> stringResource(R.string.bluetooth)
+        1 -> bt.single()
+        else -> pluralStringResource(R.plurals.bluetooth_connected, bt.size, bt.size)
+    }
+    add(TopButton("bt", Icons.Bluetooth, btLabel, onClick = { actions.openSystem(SystemScreen.Bluetooth) }))
     val (netIcon, netWarn, netLabel) = networkButtonLook(status.network)
     add(
         TopButton(

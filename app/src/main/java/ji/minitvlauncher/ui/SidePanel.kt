@@ -48,6 +48,11 @@ import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import ji.minitvlauncher.R
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import ji.minitvlauncher.system.InputSignal
 import ji.minitvlauncher.system.NotificationItem
 import ji.minitvlauncher.system.TvInputItem
 import ji.minitvlauncher.ui.theme.Manrope
@@ -126,13 +131,41 @@ fun PanelRow(onClick: () -> Unit, modifier: Modifier = Modifier, filled: Boolean
 }
 
 @Composable
-fun InputPanel(inputs: List<TvInputItem>, onPick: (TvInputItem) -> Unit, onDismiss: () -> Unit) {
+fun InputPanel(inputs: List<TvInputItem>, lastInput: String?, onPick: (TvInputItem) -> Unit, onDismiss: () -> Unit) {
     SidePanel(onDismiss) { first ->
         PanelHeader(stringResource(R.string.inputs), stringResource(R.string.inputs_title))
+        val focusIndex = inputs.indexOfFirst { it.id == lastInput }.coerceAtLeast(0)
         Column(verticalArrangement = Arrangement.spacedBy(8.px)) {
             inputs.forEachIndexed { i, input ->
-                PanelRow(onClick = { onPick(input) }, modifier = if (i == 0) Modifier.focusRequester(first) else Modifier, filled = false) {
-                    Text(input.label, style = RowTitleLarge, color = LocalContentColor.current)
+                val active = input.id == lastInput
+                PanelRow(
+                    onClick = { onPick(input) },
+                    modifier = if (i == focusIndex) Modifier.focusRequester(first) else Modifier,
+                    filled = active,
+                ) {
+                    val color = LocalContentColor.current
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.px)) {
+                            Text(input.label, style = RowTitleLarge, color = color)
+                            Text(
+                                stringResource(
+                                    when (input.signal) {
+                                        InputSignal.Connected -> if (input.isPassthrough) R.string.input_connected else R.string.input_tuner
+                                        InputSignal.Standby -> R.string.input_standby
+                                        InputSignal.None -> R.string.input_no_signal
+                                    },
+                                ),
+                                style = RowSub,
+                                color = color.copy(alpha = 0.6f),
+                            )
+                        }
+                        if (active) {
+                            Image(
+                                rememberVectorPainter(Icons.Check), stringResource(R.string.input_last_used),
+                                Modifier.size(28.px), colorFilter = ColorFilter.tint(color),
+                            )
+                        }
+                    }
                 }
             }
         }

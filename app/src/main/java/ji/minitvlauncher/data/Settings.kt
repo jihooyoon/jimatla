@@ -56,7 +56,18 @@ class Settings(private val context: Context) {
         context.dataStore.edit { it[ASKED_LOCATION] = 1 }
     }
 
+    /**
+     * Input last chosen from the launcher. Android has no public "current input" API, so this is
+     * the best guess the input panel can mark; null if none yet.
+     */
+    val lastInput: Flow<String?> = context.dataStore.data.map { it[LAST_INPUT] }
+
+    suspend fun setLastInput(id: String) {
+        context.dataStore.edit { it[LAST_INPUT] = id }
+    }
+
     private companion object {
+        val LAST_INPUT = stringPreferencesKey("last_input")
         val WEATHER = stringPreferencesKey("weather")
         val ASKED_LOCATION = intPreferencesKey("asked_location")
         val FAVORITES = stringPreferencesKey("favorites")

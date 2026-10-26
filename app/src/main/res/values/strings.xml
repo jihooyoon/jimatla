@@ -24,7 +24,16 @@
 
     <string name="inputs">Inputs</string>
     <string name="inputs_title">Choose an input</string>
+    <string name="input_connected">Connected</string>
+    <string name="input_tuner">TV channels</string>
+    <string name="input_standby">Device on standby</string>
+    <string name="input_no_signal">No signal</string>
+    <string name="input_last_used">Last chosen</string>
     <string name="bluetooth">Bluetooth &amp; accessories</string>
+    <plurals name="bluetooth_connected">
+        <item quantity="one">%d device connected</item>
+        <item quantity="other">%d devices connected</item>
+    </plurals>
     <string name="settings">Settings</string>
     <string name="net_wifi" translatable="false">Wi‑Fi</string>
     <string name="net_weak">%1$s · Weak signal</string>

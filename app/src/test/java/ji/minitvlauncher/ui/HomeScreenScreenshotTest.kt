@@ -34,6 +34,7 @@ import com.github.takahirom.roborazzi.captureScreenRoboImage
 import ji.minitvlauncher.AppEntry
 import ji.minitvlauncher.AppImage
 import ji.minitvlauncher.buildRows
+import ji.minitvlauncher.system.InputSignal
 import ji.minitvlauncher.system.NetKind
 import ji.minitvlauncher.system.NetStatus
 import ji.minitvlauncher.system.NotificationItem
@@ -244,7 +245,14 @@ class HomeScreenScreenshotTest {
 
     @Test
     fun inputPanel() {
-        status = SystemStatus(inputs = listOf(TvInputItem("h1", "HDMI 1", true), TvInputItem("h2", "HDMI 2", true), TvInputItem("tv", "Ăng-ten", false)))
+        status = SystemStatus(
+            inputs = listOf(
+                TvInputItem("h1", "HDMI 1", true),
+                TvInputItem("h2", "HDMI 2", true, InputSignal.None),
+                TvInputItem("tv", "Ăng-ten", false),
+            ),
+            lastInput = "h1",
+        )
         show(apps.take(2))
         press(listOf(Key.DirectionUp, Key.DirectionRight)) // Inputs is the first top-bar button
         press(listOf(Key.DirectionCenter))
@@ -323,5 +331,46 @@ class HomeScreenScreenshotTest {
         compose.onNodeWithText("Video & movies").assertExists()
         compose.onNodeWithText("jeudi 22 octobre").assertExists()
         shot("language_fallback_fr")
+    }
+
+    @Test
+    fun bluetoothTooltipNamesAccessories() {
+        status = SystemStatus(bluetoothDevices = listOf("Loa soundbar phòng khách"))
+        show(apps.take(2))
+        press(listOf(Key.DirectionUp, Key.DirectionRight))
+        compose.onNodeWithText("Loa soundbar phòng khách").assertExists()
+        status = SystemStatus(bluetoothDevices = listOf("Loa", "Tay cầm"))
+        settle()
+        compose.onNodeWithText("2 thiết bị đã kết nối").assertExists()
+    }
+
+    @Test
+    fun voiceKeyThenPauseClosesSearchButAPlainPauseDoesNot() {
+        // Drive the lifecycle the search screen observes through a test owner.
+        val owner = object : androidx.lifecycle.LifecycleOwner {
+            val registry = androidx.lifecycle.LifecycleRegistry(this).apply { currentState = androidx.lifecycle.Lifecycle.State.RESUMED }
+            override val lifecycle get() = registry
+        }
+        var open by mutableStateOf(true)
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            androidx.compose.runtime.CompositionLocalProvider(androidx.lifecycle.compose.LocalLifecycleOwner provides owner) {
+                LauncherTheme {
+                    if (open) SearchScreen(apps, images, voiceQuery = null, onVoice = null, onLaunch = {}, onDismiss = { open = false })
+                }
+            }
+        }
+        settle()
+        // Something else takes over (e.g. a dialog): search stays.
+        owner.registry.handleLifecycleEvent(androidx.lifecycle.Lifecycle.Event.ON_PAUSE)
+        settle()
+        assertEquals(true, open)
+        owner.registry.handleLifecycleEvent(androidx.lifecycle.Lifecycle.Event.ON_RESUME)
+        settle()
+        // The remote's voice key, then the Assistant covers us: search closes.
+        compose.onNode(isPopup()).performKeyInput { pressKey(Key.Search) }
+        owner.registry.handleLifecycleEvent(androidx.lifecycle.Lifecycle.Event.ON_PAUSE)
+        settle()
+        assertEquals(false, open)
     }
 }

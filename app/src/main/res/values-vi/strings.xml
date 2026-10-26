@@ -21,7 +21,15 @@
 
     <string name="inputs">Nguồn vào</string>
     <string name="inputs_title">Chọn đầu vào</string>
+    <string name="input_connected">Đã kết nối</string>
+    <string name="input_tuner">Truyền hình</string>
+    <string name="input_standby">Thiết bị đang chờ</string>
+    <string name="input_no_signal">Không có tín hiệu</string>
+    <string name="input_last_used">Chọn gần nhất</string>
     <string name="bluetooth">Bluetooth và phụ kiện</string>
+    <plurals name="bluetooth_connected">
+        <item quantity="other">%d thiết bị đã kết nối</item>
+    </plurals>
     <string name="settings">Cài đặt</string>
     <string name="net_weak">%1$s · Tín hiệu yếu</string>
     <string name="net_offline">Không có kết nối mạng</string>

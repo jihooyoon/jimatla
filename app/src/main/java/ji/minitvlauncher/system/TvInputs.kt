@@ -5,8 +5,15 @@ import android.content.Intent
 import android.media.tv.TvContract
 import android.media.tv.TvInputManager
 
+enum class InputSignal { Connected, Standby, None }
+
 /** A source the TV can switch to: HDMI ports, antenna, AV. */
-data class TvInputItem(val id: String, val label: String, val isPassthrough: Boolean)
+data class TvInputItem(
+    val id: String,
+    val label: String,
+    val isPassthrough: Boolean,
+    val signal: InputSignal = InputSignal.Connected,
+)
 
 /** Physical inputs first (HDMI, AV…), then tuners; empty on devices without TV inputs. */
 fun tvInputs(context: Context): List<TvInputItem> {
@@ -15,7 +22,14 @@ fun tvInputs(context: Context): List<TvInputItem> {
         .filter { it.parentId == null || it.isPassthroughInput }
         .filter { !it.isHidden(context) }
         .sortedWith(compareBy({ !it.isPassthroughInput }, { it.type }))
-        .map { TvInputItem(it.id, it.loadCustomLabel(context)?.toString() ?: it.loadLabel(context).toString(), it.isPassthroughInput) }
+        .map { info ->
+            val signal = when (runCatching { tim.getInputState(info.id) }.getOrDefault(TvInputManager.INPUT_STATE_CONNECTED)) {
+                TvInputManager.INPUT_STATE_DISCONNECTED -> InputSignal.None
+                TvInputManager.INPUT_STATE_CONNECTED_STANDBY -> InputSignal.Standby
+                else -> InputSignal.Connected
+            }
+            TvInputItem(info.id, info.loadCustomLabel(context)?.toString() ?: info.loadLabel(context).toString(), info.isPassthroughInput, signal)
+        }
 }
 
 /** Live TV app intent that tunes to [input]: HDMI and AV directly, tuners at their channel list. */

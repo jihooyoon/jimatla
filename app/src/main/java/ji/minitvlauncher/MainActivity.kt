@@ -27,6 +27,7 @@ import ji.minitvlauncher.system.NetStatus
 import ji.minitvlauncher.system.NotificationItem
 import ji.minitvlauncher.system.NotificationReader
 import ji.minitvlauncher.system.TvInputItem
+import ji.minitvlauncher.system.connectedAccessories
 import ji.minitvlauncher.system.networkStatus
 import ji.minitvlauncher.system.switchToInputIntent
 import ji.minitvlauncher.system.tvInputs
@@ -128,11 +129,15 @@ class MainActivity : ComponentActivity(), HomeActions {
                 val network by remember { networkStatus(this@MainActivity) }.collectAsStateWithLifecycle(NetStatus(NetKind.Wifi))
                 val notifications by NotificationReader.notifications.collectAsStateWithLifecycle()
                 val listening by NotificationReader.isConnected.collectAsStateWithLifecycle()
+                val lastInput by settings.lastInput.collectAsStateWithLifecycle(null)
+                val bluetooth by remember { connectedAccessories(this@MainActivity) }.collectAsStateWithLifecycle(emptyList())
                 val status = SystemStatus(
                     network = network,
                     notifications = notifications.takeIf { listening || notificationAccess },
                     hasSystemNotificationPanel = remember { packageManager.resolveActivity(systemNotificationsIntent, 0) != null },
                     inputs = inputs,
+                    bluetoothDevices = bluetooth,
+                    lastInput = lastInput,
                 )
                 HomeScreen(rows, repository, this@MainActivity, status, wallpaper, weather, homePresses)
                 pickerImages?.let { images ->
@@ -189,7 +194,9 @@ class MainActivity : ComponentActivity(), HomeActions {
     override fun openSystemNotifications(): Boolean = tryStart(systemNotificationsIntent)
 
     override fun switchInput(input: TvInputItem) {
-        if (!tryStart(switchToInputIntent(input))) {
+        if (tryStart(switchToInputIntent(input))) {
+            lifecycleScope.launch { settings.setLastInput(input.id) }
+        } else {
             Toast.makeText(this, getString(R.string.launch_failed, input.label), Toast.LENGTH_SHORT).show()
         }
     }

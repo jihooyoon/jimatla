@@ -39,7 +39,13 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import android.os.SystemClock
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.graphics.ColorFilter
@@ -69,6 +75,10 @@ import ji.minitvlauncher.ui.theme.Manrope
 import ji.minitvlauncher.ui.theme.Palette
 import ji.minitvlauncher.ui.theme.px
 import ji.minitvlauncher.ui.theme.tx
+
+/** Keys a remote may send for its microphone button; most systems handle Assist ones before apps see them. */
+private val VoiceKeys = setOf(Key.Search, Key.VoiceAssist, Key.Assist)
+private const val VOICE_KEY_WINDOW_MS = 3_000L
 
 private val PillText = TextStyle(fontFamily = Manrope, fontSize = 24.tx, fontWeight = FontWeight.Medium)
 private val Query = TextStyle(fontFamily = Manrope, fontSize = 28.tx, color = Palette.TextBright)
@@ -126,10 +136,30 @@ fun SearchScreen(
     val fieldFocus = remember { FocusRequester() }
     val backdrop = LocalBackdrop.current
 
+    // The remote's voice key opens the system Assistant over us. Close search when that happens so
+    // dismissing the Assistant lands on the home screen. Only a voice key seen just before the pause
+    // counts: notifications, dialogs or input switches also pause us and must not close search.
+    var voiceKeyAt by remember { mutableLongStateOf(Long.MIN_VALUE / 2) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE && SystemClock.uptimeMillis() - voiceKeyAt < VOICE_KEY_WINDOW_MS) onDismiss()
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+
     Popup(popupPositionProvider = FullScreen, onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
         val focusManager = LocalFocusManager.current // the popup's own window
         Column(
-            Modifier.fillMaxSize().background(backdrop).padding(start = 120.px, top = 88.px),
+            Modifier
+                .fillMaxSize()
+                .onPreviewKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyDown && event.key in VoiceKeys) voiceKeyAt = SystemClock.uptimeMillis()
+                    false // let the system open the Assistant as usual
+                }
+                .background(backdrop)
+                .padding(start = 120.px, top = 88.px),
             verticalArrangement = Arrangement.spacedBy(40.px),
         ) {
             Row(
