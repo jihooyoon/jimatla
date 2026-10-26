@@ -3,6 +3,8 @@ package ji.minitvlauncher.ui
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -76,12 +78,15 @@ fun ImagePicker(images: List<Uri>, thumbnail: suspend (Uri) -> ImageBitmap?, onP
                 itemsIndexed(images, key = { _, uri -> uri.toString() }) { i, uri ->
                     val image by produceState<ImageBitmap?>(null, uri) { value = thumbnail(uri) }
                     val shape = RoundedCornerShape(TILE_RADIUS.px)
+                    val interaction = remember { MutableInteractionSource() }
+                    val focused by interaction.collectIsFocusedAsState()
                     Surface(
                         onClick = { onPick(uri) },
-                        modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).then(if (i == 0) Modifier.focusRequester(first) else Modifier),
+                        modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).focusRing(focused)
+                            .then(if (i == 0) Modifier.focusRequester(first) else Modifier),
                         shape = ClickableSurfaceDefaults.shape(shape),
                         colors = ClickableSurfaceDefaults.colors(containerColor = Palette.Surface, focusedContainerColor = Palette.Surface),
-                        border = ClickableSurfaceDefaults.border(focusedBorder = Border(BorderStroke(4.px, Palette.TextBright), inset = (-4).px, shape = shape)),
+                        interactionSource = interaction,
                         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),
                     ) {
                         Box(Modifier.fillMaxSize()) {

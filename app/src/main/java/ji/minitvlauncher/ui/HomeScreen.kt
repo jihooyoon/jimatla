@@ -608,6 +608,7 @@ private fun AppTile(
                         val placeable = measurable.measure(Constraints.fixed(w, h))
                         layout(w, rest) { placeable.place(0, (rest - h) / 2) }
                     }
+                    .focusRing(focused)
                     .semantics { contentDescription = app.label }
                     .focusRequester(focus)
                     .then(if (extraFocus != null) Modifier.focusRequester(extraFocus) else Modifier)
@@ -635,9 +636,7 @@ private fun AppTile(
                 shape = CardDefaults.shape(shape),
                 colors = CardDefaults.colors(containerColor = fill, focusedContainerColor = fill),
                 scale = CardDefaults.scale(focusedScale = 1f),
-                border = CardDefaults.border(
-                    focusedBorder = Border(BorderStroke(4.px, Palette.TextBright), inset = (-4).px, shape = shape),
-                ),
+                border = CardDefaults.border(border = Border.None, focusedBorder = Border.None),
             ) {
                 TileImage(app, images)
                 if (ui.menuFor == app.component) {

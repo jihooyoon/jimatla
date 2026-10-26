@@ -4,6 +4,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
@@ -101,10 +104,13 @@ private fun WallpaperThumb(
 ) {
     val image by produceState<ImageBitmap?>(null, choice) { value = thumbnail(choice) }
     val shape = RoundedCornerShape(TILE_RADIUS.px)
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
     Column(verticalArrangement = Arrangement.spacedBy(12.px)) {
         Surface(
             onClick = onClick,
-            modifier = modifier.fillMaxWidth().aspectRatio(16f / 9f),
+            modifier = modifier.fillMaxWidth().aspectRatio(16f / 9f).focusRing(focused),
+            interactionSource = interaction,
             shape = ClickableSurfaceDefaults.shape(shape),
             colors = ClickableSurfaceDefaults.colors(
                 containerColor = if (choice == WallpaperChoice.None) Color(WallpaperPipeline.NEUTRAL) else Palette.Surface,
@@ -112,7 +118,7 @@ private fun WallpaperThumb(
             ),
             border = ClickableSurfaceDefaults.border(
                 border = if (choice == WallpaperChoice.None) Border(BorderStroke(1.5.px, Palette.BorderStrong), shape = shape) else Border.None,
-                focusedBorder = Border(BorderStroke(4.px, Palette.TextBright), inset = (-4).px, shape = shape),
+                focusedBorder = if (choice == WallpaperChoice.None) Border(BorderStroke(1.5.px, Palette.BorderStrong), shape = shape) else Border.None,
             ),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.04f),
         ) {

@@ -4,6 +4,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -259,16 +261,19 @@ private fun CircleButton(icon: ImageVector, label: String, onClick: () -> Unit) 
 
 @Composable
 private fun ResultTile(app: AppEntry, images: AppImageSource, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
     val shape = RoundedCornerShape(TILE_RADIUS.px)
     val fill = app.appCategory.fill
     Column(verticalArrangement = Arrangement.spacedBy(16.px)) {
         Card(
             onClick = onClick,
-            modifier = Modifier.size(320.px, 180.px),
+            modifier = Modifier.size(320.px, 180.px).focusRing(focused),
             shape = CardDefaults.shape(shape),
             colors = CardDefaults.colors(containerColor = fill, focusedContainerColor = fill),
             scale = CardDefaults.scale(focusedScale = 1f),
-            border = CardDefaults.border(focusedBorder = Border(BorderStroke(4.px, Palette.TextBright), inset = (-4).px, shape = shape)),
+            border = CardDefaults.border(border = Border.None, focusedBorder = Border.None),
+            interactionSource = interaction,
         ) {
             TileImage(app, images)
         }

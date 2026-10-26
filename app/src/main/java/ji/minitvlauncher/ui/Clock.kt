@@ -18,6 +18,18 @@ import android.graphics.Rect
 import android.graphics.Typeface
 import androidx.compose.runtime.derivedStateOf
 import kotlin.math.roundToInt
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.LayoutDirection
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import androidx.core.content.res.ResourcesCompat
 import ji.minitvlauncher.R
 import ji.minitvlauncher.weather.Condition
@@ -46,13 +58,15 @@ import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 
-// As rows scroll the clock goes from 128 px / weight 300 / -4 px spacing to 44 px / 600 / -0.5 px,
-// with the optical size following the size. Weight and spacing need new text layout, so they move
-// in CLOCK_STEPS steps; size and position follow scrolling smoothly through the graphics layer.
-private const val CLOCK_STEPS = 12
+// As rows scroll the clock goes from 128 px / weight 400 / -4 px spacing to 44 px / 600 / -0.5 px,
+// with the optical size following the size. (The design's large weight is 300; 400 at the user's
+// request.) Weight and spacing need new text layout, so they move in CLOCK_STEPS steps, prepared
+// ahead of time; size and position follow scrolling smoothly through the graphics layer.
+private const val CLOCK_STEPS = 6
+private val STEP_VALUES = (0..CLOCK_STEPS).map { it / CLOCK_STEPS.toFloat() }
 
 private fun clockSize(e: Float) = lerp(128f, 44f, e)
-private fun clockWeight(e: Float) = lerp(300f, 600f, e).roundToInt()
+private fun clockWeight(e: Float) = lerp(400f, 600f, e).roundToInt()
 private fun clockSpacing(e: Float) = lerp(-4f, -0.5f, e)
 
 /** The clock is always laid out at 128 px and scaled down; spacing is expressed in those units. */
@@ -85,28 +99,11 @@ internal fun Clock(collapse: () -> Float, now: () -> Date, weather: Weather? = n
     fun size(e: Float) = clockSize(e)
     fun top(e: Float) = lerp(232f, 74f, e)
     val dateText = dateFormat.format(date)
-    val step by remember { derivedStateOf { (collapse() * CLOCK_STEPS).roundToInt() / CLOCK_STEPS.toFloat() } }
-    val ink = rememberInk(time, dateText, step)
+    val inks = rememberInks(time, dateText)
+    PrepareClockSteps(time)
 
     Box(Modifier.fillMaxSize()) {
-        Text(
-            text = time,
-            style = clockStyle(step),
-            color = Palette.Text,
-            maxLines = 1,
-            softWrap = false,
-            modifier = Modifier.graphicsLayer {
-                val e = collapse()
-                transformOrigin = TransformOrigin(0f, 0f)
-                // Optical alignment: shift left by the digits' own left side bearing so their ink
-                // starts where the date's does, and at x = 120 (the rows' edge) once small.
-                translationX = (SIDE - ink.clockBearing * size(e) + ink.dateBearing * (1f - e)).px.toPx()
-                // Compose trims the line to the font's ascent; CSS line-height: 1 centres it instead.
-                translationY = (top(e) - ink.baselineLift * size(e)).px.toPx()
-                scaleX = size(e) / 128f
-                scaleY = scaleX
-            },
-        )
+        ClockDigits(time, collapse, inks)
         Text(
             text = dateText,
             style = Type.Date,
@@ -168,11 +165,65 @@ private fun WeatherLine(weather: Weather, now: Long, modifier: Modifier) {
 }
 
 /**
+ * Only this recomposes when the weight step changes, not the date or weather beside it.
+ * Position and scale are read in the layer, so scrolling within a step costs no layout.
+ */
+@Composable
+private fun ClockDigits(time: String, collapse: () -> Float, inks: List<Ink>?) {
+    val step by remember { derivedStateOf { (collapse() * CLOCK_STEPS).roundToInt() } }
+    val e0 = STEP_VALUES[step]
+    val ink = inks?.get(step) ?: Ink.None
+    Text(
+        text = time,
+        style = clockStyle(e0),
+        color = Palette.Text,
+        maxLines = 1,
+        softWrap = false,
+        modifier = Modifier.graphicsLayer {
+            val e = collapse()
+            val size = clockSize(e)
+            transformOrigin = TransformOrigin(0f, 0f)
+            // Optical alignment: shift left by the digits' own left side bearing so their ink
+            // starts where the date's does, and at x = 120 (the rows' edge) once small.
+            translationX = (SIDE - ink.clockBearing * size + ink.dateBearing * (1f - e)).px.toPx()
+            // Compose trims the line to the font's ascent; CSS line-height: 1 centres it instead.
+            translationY = (lerp(232f, 74f, e) - ink.baselineLift * size).px.toPx()
+            scaleX = size / 128f
+            scaleY = scaleX
+        },
+    )
+}
+
+/**
+ * Loads every step's font instance and draws each step's digits once off screen, in the
+ * background, so the first scroll doesn't stall on font loading and glyph rasterising.
+ */
+@Composable
+private fun PrepareClockSteps(time: String) {
+    val measurer = rememberTextMeasurer(cacheSize = 0)
+    val density = LocalDensity.current
+    LaunchedEffect(time) {
+        val layouts = withContext(Dispatchers.Default) { STEP_VALUES.map { measurer.measure(time, clockStyle(it), density = density) } }
+        // Big enough to hold the glyphs: drawing outside the canvas would skip rasterising them.
+        val bitmap = ImageBitmap(layouts.maxOf { it.size.width }.coerceAtLeast(1), layouts.maxOf { it.size.height }.coerceAtLeast(1))
+        val size = Size(bitmap.width.toFloat(), bitmap.height.toFloat())
+        for (layout in layouts) {
+            CanvasDrawScope().draw(density, LayoutDirection.Ltr, Canvas(bitmap), size) { drawText(layout) }
+            yield()
+        }
+    }
+}
+
+/**
  * Measured from the font itself with Paint, as the clock is drawn at this step: the left side
  * bearing (per string, since the first digit decides it), the date's bearing, and how far to lift
  * the line so the baseline sits where CSS line-height: 1 puts it, all in units of the font size.
  */
-private class Ink(val clockBearing: Float, val dateBearing: Float, val baselineLift: Float)
+private class Ink(val clockBearing: Float, val dateBearing: Float, val baselineLift: Float) {
+    companion object {
+        val None = Ink(0f, 0f, 0f)
+    }
+}
 
 private fun flexPaint(typeface: Typeface?, size: Float, weight: Int, spacingPx: Float = 0f, tabular: Boolean = false) =
     Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -192,20 +243,22 @@ private fun rememberFlexTypeface(): Typeface? {
     return remember { runCatching { ResourcesCompat.getFont(context, R.font.google_sans_flex) }.getOrNull() }
 }
 
+/** Every step's measurements, computed off the main thread whenever the time or date changes. */
 @Composable
-private fun rememberInk(time: String, date: String, step: Float): Ink {
+private fun rememberInks(time: String, date: String): List<Ink>? {
     val typeface = rememberFlexTypeface()
-    return remember(time, date, step, typeface) {
-        // Laid out at 128 with the step's weight, spacing and optical size, as the Text is.
-        val clock = flexPaint(typeface, 128f, clockWeight(step), clockSpacing(step) * 128f / clockSize(step), tabular = true)
-            .apply { fontVariationSettings = "'wght' ${clockWeight(step)}, 'opsz' ${clockSize(step).roundToInt()}" }
-        val m = clock.fontMetrics
-        Ink(
-            clockBearing = clock.leftBearing(time) / 128f,
-            dateBearing = flexPaint(typeface, 28f, 400).leftBearing(date),
-            baselineLift = ((m.descent - m.ascent) / 128f - 1f) / 2f,
-        )
-    }
+    return produceState<List<Ink>?>(null, time, date, typeface) {
+        value = withContext(Dispatchers.Default) {
+            val dateBearing = flexPaint(typeface, 28f, 400).leftBearing(date)
+            STEP_VALUES.map { e ->
+                // Laid out at 128 with the step's weight, spacing and optical size, as the Text is.
+                val clock = flexPaint(typeface, 128f, clockWeight(e), clockSpacing(e) * 128f / clockSize(e), tabular = true)
+                    .apply { fontVariationSettings = "'wght' ${clockWeight(e)}, 'opsz' ${clockSize(e).roundToInt()}" }
+                val m = clock.fontMetrics
+                Ink(clock.leftBearing(time) / 128f, dateBearing, ((m.descent - m.ascent) / 128f - 1f) / 2f)
+            }
+        }
+    }.value
 }
 
 /** Where the search pill sits beside the shrunken clock: past its ink, plus 32 (design px). */
